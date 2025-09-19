@@ -1,0 +1,36 @@
+├── components.json
+├── next-env.d.ts
+├── next.config.mjs
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── prisma
+│  ├── migrations
+│  └── schema.prisma
+├── public
+│  ├── next.svg
+│  └── vercel.svg
+├── README.md
+├── src
+│  ├── app
+│  │  ├── layout.tsx
+│  │  └── page.tsx
+│  ├── components
+│  │  └── ui
+│  │    ├── button.tsx
+│  │    ├── card.tsx
+│  │    └── input.tsx
+│  ├── generated
+│  │  └── prisma
+│  ├── lib
+│  │  ├── db
+│  │  │  └── prisma.ts
+│  │  └── utils.ts
+│  ├── server
+│  │  └── chat.ts
+│  ├── styles
+│  │  └── globals.css
+│  └── types
+│    └── index.ts
+├── tailwind.config.js
+└── tsconfig.json
