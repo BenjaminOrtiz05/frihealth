@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+  <!-- Fondo transparente -->
+  <rect width="100%" height="100%" fill="transparent"/>
+  <path d="M8 2v4M8 10v4M2 8h4M10 8h4" 
+        stroke="black" 
+        stroke-width="1" 
+        fill="none" 
+        stroke-linecap="round"/>
+</svg>
