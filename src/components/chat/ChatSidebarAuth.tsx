@@ -21,7 +21,7 @@ export default function ChatSidebar() {
       </div>
 
       {/* Historial de conversaciones */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto space-y-3 py-4">
         {histories.map((h, idx) => (
           <ChatHistoryCard key={idx} title={h.title} preview={h.preview} />
         ))}
@@ -31,7 +31,7 @@ export default function ChatSidebar() {
       <div className="p-6 border-t">
         <Link href="/profile">
           <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-            Perfil
+            Ver Perfil
           </Button>
         </Link>
       </div>
