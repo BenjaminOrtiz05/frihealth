@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { MessageSquare } from "lucide-react"
+import ChatCardMenu from "./ChatCardMenu"
 
 interface ChatCardProps {
   title: string
@@ -11,7 +12,8 @@ interface ChatCardProps {
 export default function ChatCard({ title, preview }: ChatCardProps) {
   return (
     <Card className="bg-white/90 border border-gray-200 shadow-sm rounded-xl 
-      hover:shadow-md hover:scale-[1.01] transition-transform cursor-pointer mx-3">
+      hover:shadow-md hover:scale-[1.01] transition-transform cursor-pointer mx-3 relative group">
+      
       <CardContent className="flex items-start gap-3 p-4">
         {/* Icono de chat */}
         <div className="p-2 rounded-lg bg-blue-50 text-blue-800 shrink-0">
@@ -26,6 +28,11 @@ export default function ChatCard({ title, preview }: ChatCardProps) {
           <p className="text-xs text-gray-600 truncate">
             {preview}
           </p>
+        </div>
+
+        {/* Menu solo visible al hover */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ChatCardMenu />
         </div>
       </CardContent>
     </Card>
