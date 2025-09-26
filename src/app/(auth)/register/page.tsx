@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,9 +21,11 @@ export default function RegisterPage() {
     <div className="flex min-h-screen">
       {/* Columna izquierda con imagen */}
       <div className="hidden md:flex w-2/5 bg-blue-100 items-center justify-center">
-        <img
-          src="fondo-registarse.jpg"
+        <Image
+          src="/fondo-registarse.jpg"
           alt="Ilustración de registro"
+          width={400}
+          height={600}
           className="w-full h-full object-cover"
         />
       </div>

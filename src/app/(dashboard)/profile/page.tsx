@@ -1,12 +1,19 @@
+"use client";
+
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, User, Mail, Shield } from "lucide-react"
 
 export default function UserProfilePage() {
-  const icons = Array.from({ length: 60 }).map(() => ({
+
+    // Array de colores posibles para los bordes
+  const colors = ["#4ade80", "#22d3ee", "#facc15", "#f87171", "#a78bfa"]
+
+  const icons = Array.from({ length: 100 }).map(() => ({
     top: Math.random() * 100 + "%",
     left: Math.random() * 100 + "%",
+    color: colors[Math.floor(Math.random() * colors.length)],
   }))
 
   const user = {
@@ -19,21 +26,30 @@ export default function UserProfilePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 relative p-6">
       {/* Patrón de fondo */}
-      <div className="absolute inset-0 pointer-events-none">
-        {icons.map((pos, index) => (
-          <img
-            key={index}
-            src="/pattern-health.svg"
-            className="absolute w-4 h-4 opacity-20"
-            style={{ top: pos.top, left: pos.left }}
-            alt=""
-          />
-        ))}
-      </div>
+        <div className="absolute inset-0 pointer-events-none">
+          {icons.map((icon, index) => (
+            <svg
+              key={index}
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              className="absolute"
+              style={{ top: icon.top, left: icon.left }}
+            >
+              <path
+                d="M8 2v4M8 10v4M2 8h4M10 8h4"
+                stroke={icon.color}
+                strokeWidth="1"
+                fill="none"
+                strokeLinecap="round"
+              />
+            </svg>
+          ))}
+        </div>
 
       {/* Botón volver */}
       <Link
-        href="/"
+        href="/chat/id"
         className="absolute top-6 left-6 flex items-center text-blue-900 hover:text-blue-700"
       >
         <ArrowLeft className="w-5 h-5 mr-1" />
@@ -49,10 +65,26 @@ export default function UserProfilePage() {
         {/* Ficha */}
         <Card className="w-full h-[500px] shadow-xl border border-gray-200 bg-white/95 backdrop-blur-sm rounded-2xl p-10 flex flex-col justify-between">
           <div className="flex gap-10 h-full">
-            {/* Foto rectangular con ícono */}
-            <div className="w-48 h-56 bg-gray-200 rounded-xl shadow-md flex items-center justify-center self-center">
+            {/* Foto rectangular clickeable con input oculto */}
+            <label
+              htmlFor="profilePic"
+              className="w-48 h-56 bg-gray-200 rounded-xl shadow-md flex items-center justify-center self-center cursor-pointer hover:bg-gray-300 transition"
+            >
               <User className="w-16 h-16 text-gray-400" />
-            </div>
+              <input
+                id="profilePic"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    console.log("Imagen seleccionada:", file.name)
+                    // Aquí podrías guardar el archivo en estado o subirlo al backend
+                  }
+                }}
+              />
+            </label>
 
             {/* Datos centrados verticalmente */}
             <div className="flex-1 flex flex-col justify-center items-center">

@@ -1,9 +1,11 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
+
 
 export default function LoginPage() {
   // Generar posiciones aleatorias para los íconos
@@ -16,9 +18,11 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Columna izquierda con imagen */}
       <div className="hidden md:flex w-2/5 bg-blue-100 items-center justify-center">
-        <img
+        <Image
           src="/banner-form.webp"
           alt="Ilustración de login"
+          width={400}
+          height={600}
           className="w-full h-full object-cover"
         />
       </div>
@@ -28,19 +32,20 @@ export default function LoginPage() {
         {/* Patrón de íconos aleatorio con un poquito más de opacidad */}
         <div className="absolute inset-0 pointer-events-none">
           {icons.map((pos, index) => (
-            <img
+            <svg
               key={index}
-              src="/pattern-health.svg"
-              className="absolute w-4 h-4 opacity-20"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              className="absolute"
               style={{ top: pos.top, left: pos.left }}
-              alt=""
             />
           ))}
         </div>
 
         {/* Flecha de volver */}
         <Link
-          href="/"
+          href="/chat"
           className="absolute top-6 left-6 flex items-center text-blue-900 hover:text-blue-700"
         >
           <ArrowLeft className="w-5 h-5 mr-1" />
