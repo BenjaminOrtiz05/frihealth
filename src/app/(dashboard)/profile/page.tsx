@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, User, Mail, Shield } from "lucide-react"
+import EditProfileDialog from "@/components/profile/EditProfileDialog";
+
 
 export default function UserProfilePage() {
 
@@ -122,11 +124,9 @@ export default function UserProfilePage() {
 
                 {/* Botones alineados con los campos, separados de los campos */}
                 <div className="flex gap-4 w-full mt-12">
-                  <Link href="/profile/edit" className="flex-1">
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white w-full">
-                      Editar perfil
-                    </Button>
-                  </Link>
+                  <div className="flex-1">
+                    <EditProfileDialog />
+                  </div>
                   <Link href="#" className="flex-1">
                     <Button className="bg-red-600 hover:bg-red-700 text-white w-full">
                       Cerrar sesión
