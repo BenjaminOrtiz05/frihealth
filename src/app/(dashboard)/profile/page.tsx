@@ -4,19 +4,11 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, User, Mail, Shield } from "lucide-react"
+import BackgroundIcons from "@/components/BackgroundIcons"
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
 
 
 export default function UserProfilePage() {
-
-    // Array de colores posibles para los bordes
-  const colors = ["#4ade80", "#22d3ee", "#facc15", "#f87171", "#a78bfa"]
-
-  const icons = Array.from({ length: 100 }).map(() => ({
-    top: Math.random() * 100 + "%",
-    left: Math.random() * 100 + "%",
-    color: colors[Math.floor(Math.random() * colors.length)],
-  }))
 
   const user = {
     firstName: "Juan",
@@ -27,27 +19,7 @@ export default function UserProfilePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 relative p-6">
-      {/* Patrón de fondo */}
-        <div className="absolute inset-0 pointer-events-none">
-          {icons.map((icon, index) => (
-            <svg
-              key={index}
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              className="absolute"
-              style={{ top: icon.top, left: icon.left }}
-            >
-              <path
-                d="M8 2v4M8 10v4M2 8h4M10 8h4"
-                stroke={icon.color}
-                strokeWidth="1"
-                fill="none"
-                strokeLinecap="round"
-              />
-            </svg>
-          ))}
-        </div>
+      <BackgroundIcons />
 
       {/* Botón volver */}
       <Link

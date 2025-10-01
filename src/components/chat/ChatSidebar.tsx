@@ -4,8 +4,23 @@ import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bot } from "lucide-react"
+import type { Conversation } from "@/types"
 
-export default function ChatSidebar() {
+interface ChatSidebarProps {
+  user: { id: string; name?: string } | null
+  conversations: Conversation[]
+  selectedConversationId: string | null
+  onSelectConversation: (id: string) => void
+  onCreateConversation: () => void
+}
+
+export default function ChatSidebar({
+  user,
+  conversations,
+  selectedConversationId,
+  onSelectConversation,
+  onCreateConversation,
+}: ChatSidebarProps) {
   return (
     <aside className="w-72 h-full border-r bg-white/90 backdrop-blur-sm shadow-md flex flex-col">
       {/* Logo / título */}
@@ -14,34 +29,57 @@ export default function ChatSidebar() {
         <h1 className="text-2xl font-bold text-blue-900">FriHealth</h1>
       </div>
 
-      {/* Aviso central */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full bg-white/90 border border-gray-200 shadow-md rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-center text-lg font-semibold text-blue-900">
-              Historial no disponible
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center text-sm text-gray-700">
-            Para obtener la función de historial de conversación debes{" "}
-            <Link href="/login" className="text-blue-700 hover:underline font-medium">
-              iniciar sesión
-            </Link>{" "}
-            o{" "}
-            <Link href="/register" className="text-blue-700 hover:underline font-medium">
-              registrarte
-            </Link>.
-          </CardContent>
-        </Card>
+      {/* Contenido condicional */}
+      <div className="flex-1 flex flex-col items-center justify-start p-6 space-y-4 overflow-y-auto">
+        {!user ? (
+          <Card className="w-full bg-white/90 border border-gray-200 shadow-md rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-center text-lg font-semibold text-blue-900">
+                Historial no disponible
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center text-sm text-gray-700">
+              Para obtener la función de historial de conversación debes{" "}
+              <Link href="/login" className="text-blue-700 hover:underline font-medium">
+                iniciar sesión
+              </Link>{" "}
+              o{" "}
+              <Link href="/register" className="text-blue-700 hover:underline font-medium">
+                registrarte
+              </Link>
+              .
+            </CardContent>
+          </Card>
+        ) : (
+          conversations.map((conv) => (
+            <Button
+              key={conv.id}
+              variant={conv.id === selectedConversationId ? "default" : "outline"}
+              className="w-full text-left"
+              onClick={() => onSelectConversation(conv.id)}
+            >
+              Conversación {conv.id.slice(0, 6)}
+            </Button>
+          ))
+        )}
       </div>
 
-      {/* Footer con botón */}
-      <div className="p-6 border-t">
-        <Link href="/login">
-          <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-            Iniciar sesión
+      {/* Footer */}
+      <div className="p-6 border-t w-full">
+        {!user ? (
+          <Link href="/login">
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+              Iniciar sesión
+            </Button>
+          </Link>
+        ) : (
+          <Button
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={onCreateConversation}
+          >
+            Nueva conversación
           </Button>
-        </Link>
+        )}
       </div>
     </aside>
   )

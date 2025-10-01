@@ -1,14 +1,26 @@
 "use client"
 
 import MessageBubble from "./MessageBubble"
+import type { ChatMessage } from "@/types"
 
-export default function ChatWindow() {
+interface ChatWindowProps {
+  messages: ChatMessage[]
+}
+
+export default function ChatWindow({ messages }: ChatWindowProps) {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-blue-50 to-gray-100 border-t border-l border-r border-gray-200 rounded-t-xl">
-      {/* Mensajes de ejemplo */}
-      <MessageBubble sender="system" text="¡Hola! Soy tu asistente médico. ¿En qué puedo ayudarte hoy?" />
-      <MessageBubble sender="user" text="Tengo dolor de cabeza desde ayer, ¿qué me recomiendas?" />
-      <MessageBubble sender="system" text="Entiendo. ¿El dolor es leve, moderado o fuerte?" />
+      {messages.length === 0 ? (
+        <p className="text-center text-gray-500">No hay mensajes todavía.</p>
+      ) : (
+        messages.map((m) => (
+          <MessageBubble
+            key={m.id}
+            sender={m.role === "assistant" ? "system" : "user"}
+            text={m.content}
+          />
+        ))
+      )}
     </div>
   )
 }
