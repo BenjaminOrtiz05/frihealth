@@ -10,15 +10,15 @@ interface ChatInputProps {
 }
 
 export default function ChatInput({ onSend }: ChatInputProps) {
-  const [value, setValue] = useState("")
-  const [sending, setSending] = useState(false)
+  const [text, setText] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const handleSend = async () => {
-    if (!value.trim()) return
-    setSending(true)
-    await onSend(value)
-    setValue("")
-    setSending(false)
+    if (!text.trim()) return
+    setLoading(true)
+    await onSend(text)
+    setText("")
+    setLoading(false)
   }
 
   return (
@@ -26,15 +26,15 @@ export default function ChatInput({ onSend }: ChatInputProps) {
       <Input
         placeholder="Escribe tu mensaje..."
         className="flex-1 rounded-lg border-gray-300"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        disabled={sending}
+        disabled={loading}
       />
       <Button
         className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
         onClick={handleSend}
-        disabled={sending}
+        disabled={loading}
       >
         <Send className="h-5 w-5" />
       </Button>

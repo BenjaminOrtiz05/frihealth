@@ -1,6 +1,6 @@
 import type { ChatMessage } from "@/types"
 
-export function buildPrompt(messages: ChatMessage[], isAnonymous: boolean) {
+export function buildPrompt(messages: ChatMessage[]) {
   const disclaimer =
     "⚠️ Importante: Este asistente brinda información médica general y no reemplaza la consulta con un profesional de salud."
 

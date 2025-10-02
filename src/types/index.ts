@@ -1,13 +1,13 @@
 // Roles en mensajes y usuarios
 export type Role = "user" | "assistant" | "system"
 
-// Payload esperado en /api/messages
+// Payload para enviar un mensaje
 export interface MessagePayload {
   content: string
   conversationId?: string
 }
 
-// Payload esperado en /api/conversations
+// Payload para crear una conversación
 export interface ConversationPayload {
   title?: string
 }
@@ -22,7 +22,7 @@ export interface AssistantResponse {
 // Mensajes en frontend
 export interface ChatMessage {
   id: string
-  role: "user" | "assistant"
+  role: Role
   content: string
   createdAt: Date
 }
@@ -52,4 +52,11 @@ export interface SymptomLog {
   severity: number
   notes?: string
   createdAt: Date
+}
+
+// Respuesta de autenticación
+export interface AuthResponse {
+  user: User | null
+  token?: string
+  error?: string
 }

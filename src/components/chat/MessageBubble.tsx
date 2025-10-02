@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { Cpu, User } from "lucide-react"
 
 interface MessageBubbleProps {
-  sender: "user" | "system"
+  sender: "user" | "assistant" | "system"
   text: string
 }
 

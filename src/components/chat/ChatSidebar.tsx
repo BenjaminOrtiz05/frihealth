@@ -4,10 +4,10 @@ import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bot } from "lucide-react"
-import type { Conversation } from "@/types"
+import type { Conversation, User } from "@/types"
 
 interface ChatSidebarProps {
-  user: { id: string; name?: string } | null
+  user: User | null
   conversations: Conversation[]
   selectedConversationId: string | null
   onSelectConversation: (id: string) => void
@@ -23,14 +23,14 @@ export default function ChatSidebar({
 }: ChatSidebarProps) {
   return (
     <aside className="w-72 h-full border-r bg-white/90 backdrop-blur-sm shadow-md flex flex-col">
-      {/* Logo / título */}
+      {/* Logo */}
       <div className="p-6 border-b flex items-center justify-center gap-2">
         <Bot className="w-6 h-6 text-blue-900" />
         <h1 className="text-2xl font-bold text-blue-900">FriHealth</h1>
       </div>
 
-      {/* Contenido condicional */}
-      <div className="flex-1 flex flex-col items-center justify-start p-6 space-y-4 overflow-y-auto">
+      {/* Contenido central */}
+      <div className="flex-1 flex items-center justify-center p-6">
         {!user ? (
           <Card className="w-full bg-white/90 border border-gray-200 shadow-md rounded-xl">
             <CardHeader>
@@ -51,21 +51,23 @@ export default function ChatSidebar({
             </CardContent>
           </Card>
         ) : (
-          conversations.map((conv) => (
-            <Button
-              key={conv.id}
-              variant={conv.id === selectedConversationId ? "default" : "outline"}
-              className="w-full text-left"
-              onClick={() => onSelectConversation(conv.id)}
-            >
-              Conversación {conv.id.slice(0, 6)}
-            </Button>
-          ))
+          <div className="flex flex-col gap-2 w-full overflow-y-auto">
+            {conversations.map((conv) => (
+              <Button
+                key={conv.id}
+                variant={conv.id === selectedConversationId ? "default" : "outline"}
+                className="w-full text-left"
+                onClick={() => onSelectConversation(conv.id)}
+              >
+                Conversación {conv.id.slice(0, 6)}
+              </Button>
+            ))}
+          </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="p-6 border-t w-full">
+      <div className="p-6 border-t">
         {!user ? (
           <Link href="/login">
             <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">

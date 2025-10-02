@@ -1,8 +1,8 @@
 "use client"
 
-import ChatSidebar from "@/components/chat/ChatSidebar"
-import ChatWindow from "@/components/chat/ChatWindow"
-import ChatInput from "@/components/chat/ChatInput"
+// import ChatSidebar from "@/components/chat/ChatSidebar"
+// import ChatWindow from "@/components/chat/ChatWindow"
+// import ChatInput from "@/components/chat/ChatInput"
 
 export default function ChatPageTest() {
     const colors = ["#4ade80", "#22d3ee", "#facc15", "#f87171", "#a78bfa"]
@@ -39,13 +39,13 @@ export default function ChatPageTest() {
       </div>
 
       {/* Sidebar */}
-`      <ChatSidebar />`
+{/* `      <ChatSidebar />` */}
 
       {/* Main Chat */}
       <div className="flex flex-col flex-1 p-6 relative z-10">
         
-        <ChatWindow />
-        <ChatInput />
+        {/* <ChatWindow />
+        <ChatInput /> */}
         
       </div>
     </div>

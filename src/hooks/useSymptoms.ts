@@ -1,50 +1,59 @@
-import { useState, useEffect } from "react"
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
 import type { SymptomLog } from "@/types"
 
-export function useSymptoms() {
+export function useSymptoms(userId?: string) {
   const [symptoms, setSymptoms] = useState<SymptomLog[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchSymptoms = async () => {
+  const fetchSymptoms = useCallback(async () => {
+    if (!userId) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/symptoms")
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Error al obtener síntomas")
+      const res = await fetch(`/api/symptoms?userId=${userId}`)
+      const data: SymptomLog[] = await res.json()
+      if (!res.ok) throw new Error("Error al obtener síntomas")
       setSymptoms(data)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message)
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId])
 
-  const registerSymptom = async (symptom: string, severity: number, notes?: string) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch("/api/symptoms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptom, severity, notes }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Error al registrar síntoma")
-      setSymptoms((prev) => [data, ...prev])
-      return data
-    } catch (err: any) {
-      setError(err.message)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }
+  const logSymptom = useCallback(
+    async (symptom: Omit<SymptomLog, "id" | "userId" | "createdAt">): Promise<SymptomLog | null> => {
+      if (!userId) return null
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(`/api/symptoms`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...symptom, userId }),
+        })
+        const data: SymptomLog = await res.json()
+        if (!res.ok) throw new Error("Error al registrar síntoma")
+        setSymptoms((prev) => [...prev, data])
+        return data
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        setError(message)
+        return null
+      } finally {
+        setLoading(false)
+      }
+    },
+    [userId]
+  )
 
   useEffect(() => {
     fetchSymptoms()
-  }, [])
+  }, [fetchSymptoms])
 
-  return { symptoms, loading, error, fetchSymptoms, registerSymptom }
+  return { symptoms, loading, error, fetchSymptoms, logSymptom }
 }

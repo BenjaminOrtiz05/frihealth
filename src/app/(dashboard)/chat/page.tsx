@@ -1,60 +1,64 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import ChatSidebar from "@/components/chat/ChatSidebar"
 import ChatWindow from "@/components/chat/ChatWindow"
 import ChatInput from "@/components/chat/ChatInput"
 import BackgroundIcons from "@/components/BackgroundIcons"
 import { useAuth } from "@/hooks/useAuth"
 import { useConversations } from "@/hooks/useConversations"
-import { useMessages } from "@/hooks/useMessages"
-import type { Conversation } from "@/types"
+import type { ChatMessage } from "@/types"
 
 export default function ChatPage() {
-  const { user, loading } = useAuth()
-  const { conversations, createConversation } = useConversations()
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
-  const { messages, sendMessage } = useMessages(selectedConversation?.id ?? undefined)
+  const router = useRouter()
+  const { user } = useAuth()
+  const { createConversation } = useConversations()
+  const [messages, setMessages] = useState<ChatMessage[]>([])
 
-  // Selecciona la primera conversación registrada
-  useEffect(() => {
-    if (conversations.length > 0 && !selectedConversation) {
-      setSelectedConversation(conversations[0])
+  const handleSendFirstMessage = async (content: string) => {
+    if (!content.trim()) return
+
+    let conversationId: string | null = null
+
+    if (user) {
+      // Crear conversación en BD para usuarios autenticados
+      const conv = await createConversation()
+      if (!conv?.id) return
+      conversationId = conv.id
     }
-  }, [conversations, selectedConversation])
 
-  const handleCreateConversation = async () => {
-    const conv = await createConversation()
-    if (conv) setSelectedConversation(conv)
+    // Guardar mensaje temporal si es usuario anónimo
+    const newMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content,
+      createdAt: new Date(),
+    }
+
+    setMessages((prev) => [...prev, newMessage])
+
+    // Redirigir a la conversación creada si hay ID
+    if (conversationId) {
+      router.replace(`/chat/${conversationId}`)
+    }
   }
-
-  if (loading) return <div>Cargando...</div>
 
   return (
     <div className="flex h-screen w-full bg-gray-50 relative">
       <BackgroundIcons />
 
-      {/* Sidebar con historial o aviso */}
       <ChatSidebar
         user={user}
-        conversations={conversations}
-        selectedConversationId={selectedConversation?.id ?? null}
-        onSelectConversation={(id: string) => {
-          const conv = conversations.find((c) => c.id === id)
-          if (conv) setSelectedConversation(conv)
-        }}
-        onCreateConversation={handleCreateConversation}
+        conversations={[]} // ninguna conversación aún
+        selectedConversationId={null}
+        onSelectConversation={() => {}}
+        onCreateConversation={() => {}}
       />
 
-      {/* Main chat */}
       <div className="flex flex-col flex-1 p-6 relative z-10">
         <ChatWindow messages={messages} />
-        <ChatInput
-          onSend={async (text: string) => {
-            if (!selectedConversation) return
-            await sendMessage(text)
-          }}
-        />
+        <ChatInput onSend={handleSendFirstMessage} />
       </div>
     </div>
   )

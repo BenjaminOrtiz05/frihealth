@@ -1,49 +1,67 @@
 "use client"
 
-import ChatSidebarAuth from "@/components/chat/ChatSidebarAuth"
+import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import ChatSidebar from "@/components/chat/ChatSidebar"
 import ChatWindow from "@/components/chat/ChatWindow"
 import ChatInput from "@/components/chat/ChatInput"
+import BackgroundIcons from "@/components/BackgroundIcons"
+import { useAuth } from "@/hooks/useAuth"
+import { useConversations } from "@/hooks/useConversations"
+import { useMessages } from "@/hooks/useMessages"
+import type { ChatMessage } from "@/types"
 
-export default function ChatPageAuth() {
-  const colors = ["#4ade80", "#22d3ee", "#facc15", "#f87171", "#a78bfa"]
+export default function ChatWithIdPage() {
+  const params = useParams()
+  const chatId = params.id as string
 
-  const icons = Array.from({ length: 500 }).map(() => ({
-    top: Math.random() * 100 + "%",
-    left: Math.random() * 100 + "%",
-    color: colors[Math.floor(Math.random() * colors.length)],
-  }))
+  const { user, loading } = useAuth()
+  const { conversations } = useConversations()
+  const { messages, sendMessage } = useMessages(chatId)
+
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
+
+  // Combinar mensajes de hook con local para actualizar en tiempo real
+  useEffect(() => {
+    setLocalMessages(messages)
+  }, [messages])
+
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return
+
+    // Usuario autenticado: mensaje persistente
+    if (user) {
+      const msg = await sendMessage(content)
+      if (msg) setLocalMessages((prev) => [...prev, msg])
+    } else {
+      // Usuario anónimo: mensaje temporal
+      const tempMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content,
+        createdAt: new Date(),
+      }
+      setLocalMessages((prev) => [...prev, tempMsg])
+    }
+  }
+
+  if (loading) return <div>Cargando...</div>
 
   return (
     <div className="flex h-screen w-full bg-gray-50 relative">
-      {/* Patrón de íconos */}
-      <div className="absolute inset-0 pointer-events-none">
-        {icons.map((icon, index) => (
-          <svg
-            key={index}
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            className="absolute"
-            style={{ top: icon.top, left: icon.left }}
-          >
-            <path
-              d="M8 2v4M8 10v4M2 8h4M10 8h4"
-              stroke={icon.color}
-              strokeWidth="1"
-              fill="none"
-              strokeLinecap="round"
-            />
-          </svg>
-        ))}
-      </div>
+      <BackgroundIcons />
 
-      {/* Sidebar autenticado */}
-      <ChatSidebarAuth />
+      <ChatSidebar
+        user={user}
+        conversations={conversations}
+        selectedConversationId={chatId}
+        onSelectConversation={() => {}}
+        onCreateConversation={() => {}}
+      />
 
-      {/* Main Chat */}
       <div className="flex flex-col flex-1 p-6 relative z-10">
-        <ChatWindow />
-        <ChatInput />
+        <ChatWindow messages={localMessages} />
+        <ChatInput onSend={handleSendMessage} />
       </div>
     </div>
   )
