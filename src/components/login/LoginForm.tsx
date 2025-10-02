@@ -15,24 +15,17 @@ export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setLoading(true)
 
-    try {
-      await login(email, password)
+    const success = await login(email, password)
+    setLoading(false)
+
+    // Solo redirige si login fue exitoso
+    if (success) {
       router.push("/chat")
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError("Error al iniciar sesión")
-      }
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -75,10 +68,6 @@ export default function LoginForm() {
             {loading ? "Ingresando..." : "Ingresar"}
           </Button>
         </form>
-
-        {error && (
-          <p className="mt-2 text-sm text-red-600 text-center">{error}</p>
-        )}
 
         <div className="mt-4 flex justify-between text-sm text-blue-600">
           <a href="/reset" className="hover:underline">

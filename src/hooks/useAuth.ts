@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { User } from "@/types"
+import { toast } from "sonner"
 
 interface AuthResponse {
   user: User
@@ -24,7 +25,7 @@ export function useAuth() {
     setLoading(false)
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setLoading(true)
     setError(null)
     try {
@@ -40,15 +41,20 @@ export function useAuth() {
       setUser(data.user)
       localStorage.setItem("token", data.token!)
       localStorage.setItem("user", JSON.stringify(data.user))
+
+      toast.success("Inicio de sesión exitoso 🎉")
+      return true
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setError(message)
+      toast.error(message)
+      return false
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const register = useCallback(async (email: string, password: string, name?: string) => {
+  const register = useCallback(async (email: string, password: string, name?: string): Promise<boolean> => {
     setLoading(true)
     setError(null)
     try {
@@ -64,9 +70,14 @@ export function useAuth() {
       setUser(data.user)
       localStorage.setItem("token", data.token!)
       localStorage.setItem("user", JSON.stringify(data.user))
+
+      toast.success("Registro exitoso 🎉")
+      return true
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setError(message)
+      toast.error(message)
+      return false
     } finally {
       setLoading(false)
     }
@@ -76,6 +87,7 @@ export function useAuth() {
     setUser(null)
     localStorage.removeItem("token")
     localStorage.removeItem("user")
+    toast.info("Sesión cerrada")
   }, [])
 
   return { user, loading, error, login, register, logout }
