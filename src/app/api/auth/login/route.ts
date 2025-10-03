@@ -24,7 +24,19 @@ export async function POST(req: NextRequest) {
     // Crear JWT
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: "7d" })
 
-    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name }, token })
+    // Crear response y setear cookie
+    const response = NextResponse.json({
+      user: { id: user.id, email: user.email, name: user.name },
+    })
+
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60
+    })
+
+    return response
+
   } catch (error: unknown) {
     console.error(error)
     const message = error instanceof Error ? error.message : "Error en login"
