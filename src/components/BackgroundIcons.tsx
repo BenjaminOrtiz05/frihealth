@@ -5,7 +5,7 @@ export default function BackgroundPattern() {
   const colors = ["#4ade80", "#22d3ee", "#facc15", "#f87171", "#a78bfa"]
 
   // Generar posiciones y colores aleatorios para los íconos
-  const icons = Array.from({ length: 100 }).map(() => ({
+  const icons = Array.from({ length: 500 }).map(() => ({
     top: Math.random() * 100 + "%",
     left: Math.random() * 100 + "%",
     color: colors[Math.floor(Math.random() * colors.length)],

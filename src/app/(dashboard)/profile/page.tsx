@@ -1,20 +1,54 @@
 "use client";
 
-import Link from "next/link"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, User, Mail, Shield } from "lucide-react"
-import BackgroundIcons from "@/components/BackgroundIcons"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, User, Mail, Shield } from "lucide-react";
+import BackgroundIcons from "@/components/BackgroundIcons";
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
 
+interface UserData {
+  name: string;
+  email: string;
+  role: string;
+}
 
 export default function UserProfilePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<UserData | null>(null);
 
-  const user = {
-    firstName: "Juan",
-    lastName: "Pérez",
-    email: "juan.perez@correo.com",
-    role: "Normal",
+  // Cargar datos del usuario logueado
+  useEffect(() => {
+    // Puedes adaptar esto según cómo guardes el usuario (localStorage, cookie, etc.)
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      // Si no hay usuario logueado, redirige al login
+      router.push("/login");
+    }
+  }, [router]);
+
+  // Lógica de logout
+  const handleLogout = () => {
+    // Elimina token y datos del usuario
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Redirige al chat
+    router.push("/chat");
+  };
+
+  // Mientras carga el usuario
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <p className="text-gray-600 text-lg font-medium">Cargando usuario...</p>
+      </div>
+    );
   }
 
   return (
@@ -51,9 +85,9 @@ export default function UserProfilePage() {
                 accept="image/*"
                 className="hidden"
                 onChange={(e) => {
-                  const file = e.target.files?.[0]
+                  const file = e.target.files?.[0];
                   if (file) {
-                    console.log("Imagen seleccionada:", file.name)
+                    console.log("Imagen seleccionada:", file.name);
                     // Aquí podrías guardar el archivo en estado o subirlo al backend
                   }
                 }}
@@ -69,7 +103,7 @@ export default function UserProfilePage() {
                   <div>
                     <p className="text-sm text-gray-500">Nombre completo</p>
                     <p className="text-lg font-semibold text-gray-800">
-                      {user.firstName} {user.lastName}
+                      {user.name}
                     </p>
                   </div>
                 </div>
@@ -94,16 +128,17 @@ export default function UserProfilePage() {
                   </div>
                 </div>
 
-                {/* Botones alineados con los campos, separados de los campos */}
+                {/* Botones alineados con los campos */}
                 <div className="flex gap-4 w-full mt-12">
                   <div className="flex-1">
                     <EditProfileDialog />
                   </div>
-                  <Link href="#" className="flex-1">
-                    <Button className="bg-red-600 hover:bg-red-700 text-white w-full">
-                      Cerrar sesión
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={handleLogout}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white w-full"
+                  >
+                    Cerrar sesión
+                  </Button>
                 </div>
               </div>
             </div>
@@ -111,5 +146,5 @@ export default function UserProfilePage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

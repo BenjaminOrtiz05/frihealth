@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bot } from "lucide-react"
+import ChatCard from "@/components/chat/ChatHistoryCard"
 import type { Conversation, User } from "@/types"
 
 interface ChatSidebarProps {
@@ -24,45 +25,67 @@ export default function ChatSidebar({
   return (
     <aside className="w-72 h-full border-r bg-white/90 backdrop-blur-sm shadow-md flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b flex items-center justify-center gap-2">
-        <Bot className="w-6 h-6 text-blue-900" />
-        <h1 className="text-2xl font-bold text-blue-900">FriHealth</h1>
+      <div className="p-6 border-b flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Bot className="w-6 h-6 text-blue-900" />
+          <h1 className="text-2xl font-bold text-blue-900">FriHealth</h1>
+        </div>
       </div>
 
-      {/* Contenido central */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      {/* Botón: Nueva conversación */}
+      {user && (
+        <div className="p-4 border-b flex justify-center">
+          <Button
+            onClick={onCreateConversation}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all"
+          >
+            Nueva conversación
+          </Button>
+        </div>
+      )}
+
+      {/* Contenido central (Historial) */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
         {!user ? (
-          <Card className="w-full bg-white/90 border border-gray-200 shadow-md rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-center text-lg font-semibold text-blue-900">
-                Historial no disponible
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center text-sm text-gray-700">
-              Para obtener la función de historial de conversación debes{" "}
-              <Link href="/login" className="text-blue-700 hover:underline font-medium">
-                iniciar sesión
-              </Link>{" "}
-              o{" "}
-              <Link href="/register" className="text-blue-700 hover:underline font-medium">
-                registrarte
-              </Link>
-              .
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-2 w-full overflow-y-auto">
-            {conversations.map((conv) => (
-              <Button
-                key={conv.id}
-                variant={conv.id === selectedConversationId ? "default" : "outline"}
-                className="w-full text-left"
-                onClick={() => onSelectConversation(conv.id)}
-              >
-                Conversación {conv.id.slice(0, 6)}
-              </Button>
-            ))}
+          <div className="h-full flex items-center justify-center">
+            <Card className="w-full bg-white/90 border border-gray-200 shadow-md rounded-xl max-w-sm">
+              <CardHeader>
+                <CardTitle className="text-center text-lg font-semibold text-blue-900">
+                  Historial no disponible
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center text-sm text-gray-700">
+                Para acceder a tu historial debes{" "}
+                <Link href="/login" className="text-blue-700 hover:underline font-medium">
+                  iniciar sesión
+                </Link>{" "}
+                o{" "}
+                <Link href="/register" className="text-blue-700 hover:underline font-medium">
+                  registrarte
+                </Link>
+                .
+              </CardContent>
+            </Card>
           </div>
+        ) : conversations.length > 0 ? (
+          conversations.map((conv) => {
+            const title = `Conversación ${conv.id.slice(0, 6)}`
+            const preview = "Sin mensajes aún"
+
+            return (
+              <div
+                key={conv.id}
+                onClick={() => onSelectConversation(conv.id)}
+                className={conv.id === selectedConversationId ? "ring-2 ring-emerald-200 rounded-md" : ""}
+              >
+                <ChatCard title={title} preview={preview} />
+              </div>
+            )
+          })
+        ) : (
+          <p className="text-sm text-gray-600 text-center mt-6">
+            No hay conversaciones recientes
+          </p>
         )}
       </div>
 
@@ -75,12 +98,11 @@ export default function ChatSidebar({
             </Button>
           </Link>
         ) : (
-          <Button
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-            onClick={onCreateConversation}
-          >
-            Nueva conversación
-          </Button>
+          <Link href="/profile">
+            <Button className="w-full bg-blue-900 hover:bg-blue-950 text-white rounded-xl transition-all">
+              Ver Perfil
+            </Button>
+          </Link>
         )}
       </div>
     </aside>
