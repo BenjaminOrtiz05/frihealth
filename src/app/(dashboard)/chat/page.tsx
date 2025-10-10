@@ -8,39 +8,34 @@ import ChatInput from "@/components/chat/ChatInput"
 import BackgroundIcons from "@/components/BackgroundIcons"
 import { useAuth } from "@/hooks/useAuth"
 import { useConversations } from "@/hooks/useConversations"
-import type { ChatMessage } from "@/types"
 
 export default function ChatPage() {
   const router = useRouter()
-  const { user } = useAuth()
-  const { createConversation } = useConversations()
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const { user, token } = useAuth()
+  const { conversations, createConversation } = useConversations(token ?? undefined)
 
-  const handleSendFirstMessage = async (content: string) => {
-    if (!content.trim()) return
+  const [isCreating, setIsCreating] = useState(false)
 
-    let conversationId: string | null = null
+  const handleStartConversation = async (content: string) => {
+    if (!content.trim() || isCreating) return
+    setIsCreating(true)
 
-    if (user) {
-      // Crear conversación en BD para usuarios autenticados
-      const conv = await createConversation()
-      if (!conv?.id) return
-      conversationId = conv.id
-    }
+    try {
+      let conversationId: string
 
-    // Guardar mensaje temporal si es usuario anónimo
-    const newMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content,
-      createdAt: new Date(),
-    }
+      if (user) {
+        const newConv = await createConversation()
+        if (!newConv?.id) throw new Error("No se pudo crear la conversación en BD")
+        conversationId = newConv.id
+      } else {
+        conversationId = crypto.randomUUID()
+      }
 
-    setMessages((prev) => [...prev, newMessage])
-
-    // Redirigir a la conversación creada si hay ID
-    if (conversationId) {
       router.replace(`/chat/${conversationId}`)
+    } catch (error) {
+      console.error("Error al iniciar conversación:", error)
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -50,15 +45,25 @@ export default function ChatPage() {
 
       <ChatSidebar
         user={user}
-        conversations={[]} // ninguna conversación aún
+        conversations={conversations}
         selectedConversationId={null}
-        onSelectConversation={() => {}}
+        onSelectConversation={(id) => router.push(`/chat/${id}`)}
         onCreateConversation={() => {}}
       />
 
       <div className="flex flex-col flex-1 p-6 relative z-10">
-        <ChatWindow messages={messages} />
-        <ChatInput onSend={handleSendFirstMessage} />
+        <ChatWindow messages={[]} />
+
+        <div className="relative">
+          <ChatInput onSend={handleStartConversation} disabled={isCreating} />
+          {isCreating && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-xl">
+              <span className="text-sm text-gray-700 animate-pulse">
+                Creando conversación...
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

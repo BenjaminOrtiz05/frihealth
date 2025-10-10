@@ -7,18 +7,23 @@ import { useState } from "react"
 
 interface ChatInputProps {
   onSend: (text: string) => Promise<void>
+  disabled?: boolean // 👈 nuevo: permite bloquear mientras se crea conversación
 }
 
-export default function ChatInput({ onSend }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleSend = async () => {
-    if (!text.trim()) return
+    if (!text.trim() || loading || disabled) return
+
     setLoading(true)
-    await onSend(text)
-    setText("")
-    setLoading(false)
+    try {
+      await onSend(text)
+      setText("")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -29,12 +34,12 @@ export default function ChatInput({ onSend }: ChatInputProps) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        disabled={loading}
+        disabled={loading || disabled}
       />
       <Button
         className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
         onClick={handleSend}
-        disabled={loading}
+        disabled={loading || disabled}
       >
         <Send className="h-5 w-5" />
       </Button>

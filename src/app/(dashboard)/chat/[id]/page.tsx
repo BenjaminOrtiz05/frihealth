@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import ChatSidebar from "@/components/chat/ChatSidebar"
 import ChatWindow from "@/components/chat/ChatWindow"
@@ -13,28 +13,31 @@ import type { ChatMessage } from "@/types"
 
 export default function ChatWithIdPage() {
   const params = useParams()
+  const router = useRouter()
   const chatId = params.id as string
 
-  const { user, loading } = useAuth()
-  const { conversations } = useConversations()
+  const { user, token, loading: authLoading } = useAuth()
+  const { conversations } = useConversations(token ?? undefined)
   const { messages, sendMessage } = useMessages(chatId)
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
 
-  // Combinar mensajes de hook con local para actualizar en tiempo real
   useEffect(() => {
-    setLocalMessages(messages)
+    // Combina mensajes persistentes con los locales temporales
+    setLocalMessages((prev) => {
+      const ids = new Set(prev.map((m) => m.id))
+      const newMsgs = messages.filter((m) => !ids.has(m.id))
+      return [...prev, ...newMsgs]
+    })
   }, [messages])
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return
 
-    // Usuario autenticado: mensaje persistente
     if (user) {
       const msg = await sendMessage(content)
       if (msg) setLocalMessages((prev) => [...prev, msg])
     } else {
-      // Usuario anónimo: mensaje temporal
       const tempMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
@@ -45,7 +48,7 @@ export default function ChatWithIdPage() {
     }
   }
 
-  if (loading) return <div>Cargando...</div>
+  if (authLoading) return <div>Cargando...</div>
 
   return (
     <div className="flex h-screen w-full bg-gray-50 relative">
@@ -55,7 +58,7 @@ export default function ChatWithIdPage() {
         user={user}
         conversations={conversations}
         selectedConversationId={chatId}
-        onSelectConversation={() => {}}
+        onSelectConversation={(id) => router.push(`/chat/${id}`)}
         onCreateConversation={() => {}}
       />
 

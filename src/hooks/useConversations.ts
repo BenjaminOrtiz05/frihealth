@@ -3,44 +3,53 @@
 import { useState, useEffect, useCallback } from "react"
 import type { Conversation } from "@/types"
 
-export function useConversations() {
+export function useConversations(token?: string) {
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchConversations = useCallback(async () => {
+    if (!token) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/conversations")
-      const data: Conversation[] = await res.json()
+      const res = await fetch("/api/conversations", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       if (!res.ok) throw new Error("Error al obtener conversaciones")
+      const data: Conversation[] = await res.json()
       setConversations(data)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [token])
 
-  const createConversation = useCallback(async (): Promise<Conversation | null> => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch("/api/conversations", { method: "POST" })
-      const data: Conversation = await res.json()
-      if (!res.ok) throw new Error("Error al crear conversación")
-      setConversations((prev) => [data, ...prev])
-      return data
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const createConversation = useCallback(
+    async (title?: string): Promise<Conversation | null> => {
+      if (!token) return null
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ title }),
+        })
+        if (!res.ok) throw new Error("Error al crear conversación")
+        const data: Conversation = await res.json()
+        setConversations((prev) => [data, ...prev])
+        return data
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+        return null
+      } finally {
+        setLoading(false)
+      }
+    },
+    [token]
+  )
 
   useEffect(() => {
     fetchConversations()

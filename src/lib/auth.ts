@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken"
+import { prisma } from "@/lib/db/prisma"
 
-export function verifyAuth(req: Request) {
+export async function verifyAuth(req: Request) {
   const authHeader = req.headers.get("authorization")
   if (!authHeader) return null
 
@@ -8,8 +9,10 @@ export function verifyAuth(req: Request) {
   if (!token) return null
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!)
-    return decoded as { id: string; email: string }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+    // 🔹 Traer usuario completo desde la DB
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } })
+    return user // null si no existe
   } catch {
     return null
   }

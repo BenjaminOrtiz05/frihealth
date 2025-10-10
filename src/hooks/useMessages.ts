@@ -5,7 +5,7 @@ import type { ChatMessage } from "@/types"
 
 export function useMessages(conversationId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchMessages = useCallback(async () => {
@@ -18,31 +18,41 @@ export function useMessages(conversationId?: string) {
       if (!res.ok) throw new Error("Error al obtener mensajes")
       setMessages(data)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
   }, [conversationId])
 
   const sendMessage = useCallback(
-    async (content: string): Promise<ChatMessage | null> => {
+    async (content: string, role: "user" | "assistant" = "user"): Promise<ChatMessage | null> => {
       if (!conversationId) return null
       setLoading(true)
       setError(null)
+
+      const tempMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role,
+        content,
+        createdAt: new Date(),
+      }
+      setMessages((prev) => [...prev, tempMessage])
+
       try {
         const res = await fetch(`/api/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, conversationId }),
+          body: JSON.stringify({ content, conversationId, role }),
         })
         const data: ChatMessage = await res.json()
-        if (!res.ok) throw new Error("Error al enviar mensaje")
-        setMessages((prev) => [...prev, data])
+        if (!res.ok) throw new Error(data?.error || "Error al enviar mensaje")
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === tempMessage.id ? data : msg))
+        )
         return data
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        setError(message)
+        setError(err instanceof Error ? err.message : String(err))
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id))
         return null
       } finally {
         setLoading(false)

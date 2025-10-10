@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // Crear response
     const response = NextResponse.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      token, // <— también lo incluimos en el cuerpo JSON
+      token,
     })
 
     // Setear cookie segura

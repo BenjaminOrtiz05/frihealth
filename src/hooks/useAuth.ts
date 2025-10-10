@@ -12,15 +12,17 @@ interface AuthResponse {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(null) // ✅ nuevo
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Obtener usuario desde localStorage (si existe token)
+  // Obtener usuario y token desde localStorage
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    const userData = localStorage.getItem("user")
-    if (token && userData) {
-      setUser(JSON.parse(userData))
+    const storedToken = localStorage.getItem("token")
+    const storedUser = localStorage.getItem("user")
+    if (storedToken && storedUser) {
+      setToken(storedToken)
+      setUser(JSON.parse(storedUser))
     }
     setLoading(false)
   }, [])
@@ -39,6 +41,7 @@ export function useAuth() {
       if (!res.ok) throw new Error(data.error || "Error en login")
 
       setUser(data.user)
+      setToken(data.token ?? null) // ✅ almacenar token
       localStorage.setItem("token", data.token!)
       localStorage.setItem("user", JSON.stringify(data.user))
 
@@ -68,6 +71,7 @@ export function useAuth() {
       if (!res.ok) throw new Error(data.error || "Error en registro")
 
       setUser(data.user)
+      setToken(data.token ?? null) // ✅ almacenar token
       localStorage.setItem("token", data.token!)
       localStorage.setItem("user", JSON.stringify(data.user))
 
@@ -85,10 +89,11 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     setUser(null)
+    setToken(null) // ✅ limpiar token
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     toast.info("Sesión cerrada")
   }, [])
 
-  return { user, loading, error, login, register, logout }
+  return { user, token, loading, error, login, register, logout } // ✅ retornar token
 }

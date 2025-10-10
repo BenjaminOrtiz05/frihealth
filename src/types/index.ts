@@ -25,6 +25,7 @@ export interface ChatMessage {
   role: Role
   content: string
   createdAt: Date
+  error?: string
 }
 
 // Usuario
@@ -39,6 +40,7 @@ export interface User {
 // Conversación
 export interface Conversation {
   id: string
+  title: string
   userId: string
   createdAt: Date
   updatedAt: Date
