@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import type { ChatMessage } from "@/types"
 
-export function useMessages(conversationId?: string) {
+export function useMessages(conversationId?: string, token?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -13,7 +13,9 @@ export function useMessages(conversationId?: string) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/messages?conversationId=${conversationId}`)
+      const res = await fetch(`/api/messages?conversationId=${conversationId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data: ChatMessage[] = await res.json()
       if (!res.ok) throw new Error("Error al obtener mensajes")
       setMessages(data)
@@ -22,7 +24,7 @@ export function useMessages(conversationId?: string) {
     } finally {
       setLoading(false)
     }
-  }, [conversationId])
+  }, [conversationId, token])
 
   const sendMessage = useCallback(
     async (content: string, role: "user" | "assistant" = "user"): Promise<ChatMessage | null> => {
@@ -41,7 +43,10 @@ export function useMessages(conversationId?: string) {
       try {
         const res = await fetch(`/api/messages`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ content, conversationId, role }),
         })
         const data: ChatMessage = await res.json()
@@ -58,7 +63,7 @@ export function useMessages(conversationId?: string) {
         setLoading(false)
       }
     },
-    [conversationId]
+    [conversationId, token]
   )
 
   useEffect(() => {

@@ -27,15 +27,18 @@ export function useConversations(token?: string) {
   }, [token])
 
   const createConversation = useCallback(
-    async (title?: string): Promise<Conversation | null> => {
+    async (title?: string, firstMessage?: string): Promise<Conversation | null> => {
       if (!token) return null
       setLoading(true)
       setError(null)
       try {
         const res = await fetch("/api/conversations", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ title }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ title, firstMessage }),
         })
         if (!res.ok) throw new Error("Error al crear conversación")
         const data: Conversation = await res.json()

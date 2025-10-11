@@ -18,18 +18,22 @@ export default function ChatWithIdPage() {
 
   const { user, token, loading: authLoading } = useAuth()
   const { conversations } = useConversations(token ?? undefined)
-  const { messages, sendMessage } = useMessages(chatId)
+  const { messages, sendMessage } = useMessages(chatId, token ?? undefined)
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
 
+  // 🔹 Cargar mensajes anónimos desde localStorage
   useEffect(() => {
-    // Combina mensajes persistentes con los locales temporales
-    setLocalMessages((prev) => {
-      const ids = new Set(prev.map((m) => m.id))
-      const newMsgs = messages.filter((m) => !ids.has(m.id))
-      return [...prev, ...newMsgs]
-    })
-  }, [messages])
+    if (!user) {
+      const saved = localStorage.getItem(`anon-messages-${chatId}`)
+      if (saved) setLocalMessages(JSON.parse(saved))
+    }
+  }, [chatId, user])
+
+  // 🔹 Sincronizar con mensajes persistentes del backend
+  useEffect(() => {
+    if (user) setLocalMessages(messages)
+  }, [messages, user])
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return
@@ -44,7 +48,9 @@ export default function ChatWithIdPage() {
         content,
         createdAt: new Date(),
       }
-      setLocalMessages((prev) => [...prev, tempMsg])
+      const updated = [...localMessages, tempMsg]
+      setLocalMessages(updated)
+      localStorage.setItem(`anon-messages-${chatId}`, JSON.stringify(updated))
     }
   }
 

@@ -24,11 +24,24 @@ export default function ChatPage() {
       let conversationId: string
 
       if (user) {
-        const newConv = await createConversation()
+        // ✅ Crear conversación en BD con el primer mensaje
+        const newConv = await createConversation("Nueva conversación", content)
         if (!newConv?.id) throw new Error("No se pudo crear la conversación en BD")
         conversationId = newConv.id
       } else {
+        // ✅ Usuario anónimo (local)
         conversationId = crypto.randomUUID()
+        localStorage.setItem(
+          `anon-messages-${conversationId}`,
+          JSON.stringify([
+            {
+              id: crypto.randomUUID(),
+              role: "user",
+              content,
+              createdAt: new Date(),
+            },
+          ])
+        )
       }
 
       router.replace(`/chat/${conversationId}`)

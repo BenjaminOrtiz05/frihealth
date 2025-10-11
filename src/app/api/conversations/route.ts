@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db/prisma"
 import { verifyAuth } from "@/lib/auth"
 
-// ✅ Obtener todas las conversaciones del usuario
+// 🔹 Obtener todas las conversaciones del usuario
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req)
@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const conversations = await prisma.conversation.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: "desc" },
+      include: { messages: true },
     })
 
     return NextResponse.json(conversations)
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ✅ Crear una nueva conversación
+// 🔹 Crear una nueva conversación con mensaje inicial opcional
 export async function POST(req: NextRequest) {
   try {
     const user = await verifyAuth(req)
@@ -32,12 +33,17 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}))
     const title = body.title || "Nueva conversación"
+    const firstMessage = body.firstMessage
 
     const conversation = await prisma.conversation.create({
       data: {
         userId: user.id,
         title,
+        messages: firstMessage
+          ? { create: { role: "user", content: firstMessage } }
+          : undefined,
       },
+      include: { messages: true },
     })
 
     return NextResponse.json(conversation)
