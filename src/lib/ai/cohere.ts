@@ -57,7 +57,7 @@ export async function cohereResponse(
   const retries = opts.retries ?? DEFAULT_RETRIES
 
   let attempt = 0
-  let lastError: any
+  let lastError: unknown = null
 
   while (attempt <= retries) {
     try {
@@ -79,8 +79,8 @@ export async function cohereResponse(
       )
 
       // ✅ Acceso seguro a la respuesta
-      const output = (response as any)?.generations?.[0]?.text
-      if (!output) throw new Error("Respuesta vacía del modelo Cohere")
+      const generations = (response as { generations?: { text?: string }[] })?.generations
+      const output = generations?.[0]?.text ?? ""
 
       return output.trim()
     } catch (err) {
