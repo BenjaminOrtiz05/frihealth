@@ -26,45 +26,49 @@ export function useMessages(conversationId?: string, token?: string) {
     }
   }, [conversationId, token])
 
-  const sendMessage = useCallback(
-    async (content: string, role: "user" | "assistant" = "user"): Promise<ChatMessage | null> => {
-      if (!conversationId) return null
-      setLoading(true)
-      setError(null)
+const sendMessage = useCallback(
+  async (content: string, role: "user" | "assistant" = "user") => {
+    if (!conversationId) return null
+    setLoading(true)
+    setError(null)
 
-      const tempMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role,
-        content,
-        createdAt: new Date(),
-      }
-      setMessages((prev) => [...prev, tempMessage])
+    const tempMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role,
+      content,
+      createdAt: new Date(),
+    }
 
-      try {
-        const res = await fetch(`/api/messages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ content, conversationId, role }),
-        })
-        const data: ChatMessage = await res.json()
-        if (!res.ok) throw new Error(data?.error || "Error al enviar mensaje")
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === tempMessage.id ? data : msg))
-        )
-        return data
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
-        setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id))
-        return null
-      } finally {
-        setLoading(false)
-      }
-    },
-    [conversationId, token]
-  )
+    setMessages((prev) => [...prev, tempMessage])
+
+    try {
+      const res = await fetch(`/api/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ content, conversationId, role }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Error al enviar mensaje")
+
+      // 🔹 El backend devuelve [userMsg, aiMsg]
+      const newMessages: ChatMessage[] = Array.isArray(data) ? data : [data]
+
+      setMessages((prev) => [...prev.filter((msg) => msg.id !== tempMessage.id), ...newMessages])
+      return newMessages
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  },
+  [conversationId, token]
+)
 
   useEffect(() => {
     fetchMessages()

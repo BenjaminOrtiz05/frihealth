@@ -40,7 +40,7 @@ export default function ChatWithIdPage() {
 
     if (user) {
       const msg = await sendMessage(content)
-      if (msg) setLocalMessages((prev) => [...prev, msg])
+      if (msg) setLocalMessages((prev) => [...prev, ...msg])
     } else {
       const tempMsg: ChatMessage = {
         id: crypto.randomUUID(),
