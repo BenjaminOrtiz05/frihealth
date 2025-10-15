@@ -41,11 +41,16 @@ export async function POST(req: NextRequest) {
     })
 
     // 🔹 Llamar a la IA con fallback
-    const aiText = await getAIResponse(content, {
-      temperature: 0.5,
-      maxTokens: 300,
-      order: ["cohere", "huggingface", "gpt4all"],
-    })
+    let aiText = "Lo siento, el servicio de IA no está disponible por ahora."
+    try {
+      aiText = await getAIResponse(content, {
+        temperature: 0.5,
+        maxTokens: 300,
+        order: ["cohere", "huggingface"],
+      })
+    } catch (error) {
+      console.warn("⚠️ No se pudo generar respuesta de IA:", error)
+    }
 
     // 🔹 Guardar respuesta del asistente
     const aiMsg = await prisma.message.create({
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json([userMsg, aiMsg])
   } catch (err) {
-    console.error("Error al crear mensaje:", err)
+    console.error("Error al crear mensaje:", err )
     return NextResponse.json({ error: "Error al crear mensaje" }, { status: 500 })
   }
 }
