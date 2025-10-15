@@ -14,7 +14,9 @@ type GPT4AllOpts = {
   timeoutMs?: number
 }
 
-const SERVER_URL = process.env.GPT4ALL_SERVER_URL || "http://localhost:5050/generate"
+// Configuración base
+const SERVER_URL =
+  process.env.GPT4ALL_SERVER_URL || "http://localhost:5050/generate"
 const DEFAULT_TEMPERATURE = Number(process.env.GPT4ALL_TEMPERATURE || "0.3")
 const DEFAULT_MAX_TOKENS = Number(process.env.GPT4ALL_MAX_TOKENS || "300")
 const DEFAULT_TIMEOUT = Number(process.env.GPT4ALL_TIMEOUT_MS || "10000")
@@ -37,6 +39,15 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
+// 🧠 Define el tipo esperado de respuesta del servidor
+interface GPT4AllResponse {
+  response?: string
+  [key: string]: unknown
+}
+
+/**
+ * Genera una respuesta usando el servidor local de GPT4All
+ */
 export async function gpt4allResponse(
   prompt: string,
   opts: GPT4AllOpts = {}
@@ -59,23 +70,29 @@ export async function gpt4allResponse(
         fetch(SERVER_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt, temperature, maxTokens }),
         }),
         timeoutMs
       )
 
       if (!response.ok) {
-        throw new Error(`Servidor GPT4All respondió con ${response.status}: ${response.statusText}`)
+        throw new Error(
+          `Servidor GPT4All respondió con ${response.status}: ${response.statusText}`
+        )
       }
 
-      const data = await response.json()
-      const text = data.response?.trim() ?? ""
+      // ✅ Convertimos con tipado seguro
+      const data = (await response.json()) as GPT4AllResponse
+      const text =
+        typeof data.response === "string" ? data.response.trim() : ""
+
       if (!text) throw new Error("Respuesta vacía del servidor GPT4All")
 
       return text
     } catch (err) {
       lastError = err
       if (attempt > retries) break
+
       const backoff = Math.min(2000 * 2 ** (attempt - 1), 8000)
       await sleep(backoff + Math.random() * 200)
     }

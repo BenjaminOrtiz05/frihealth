@@ -1,10 +1,9 @@
 /**
- * Cohere AI v7.19.0
- * Compatible con fallback
- * Usa CohereClientV2
+ * Cohere AI v7.19+
+ * Compatible con fallback y Cohere v2
  */
 
-import { CohereClientV2 } from "cohere-ai"
+import { CohereClient } from "cohere-ai"
 
 type CohereOpts = {
   model?: string
@@ -15,23 +14,21 @@ type CohereOpts = {
 }
 
 const COHERE_KEY = process.env.COHERE_API_KEY
-const DEFAULT_MODEL = process.env.COHERE_MODEL || "command-r-plus"
+const DEFAULT_MODEL = process.env.COHERE_MODEL || "command-r"
 const DEFAULT_TIMEOUT = Number(process.env.COHERE_TIMEOUT_MS || "10000")
 const DEFAULT_RETRIES = Number(process.env.COHERE_MAX_RETRIES || "2")
 
-// Inicialización segura del cliente
-const client = COHERE_KEY ? new CohereClientV2({ token: COHERE_KEY }) : null
+const client = COHERE_KEY ? new CohereClient({ token: COHERE_KEY }) : null
 
 function sleep(ms: number) {
   return new Promise((res) => setTimeout(res, ms))
 }
 
-/** Timeout wrapper */
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timeoutId: NodeJS.Timeout
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Timeout tras ${ms}ms`)), ms)
-  })
+  const timeout = new Promise<never>((_, reject) =>
+    (timeoutId = setTimeout(() => reject(new Error(`Timeout tras ${ms}ms`)), ms))
+  )
   try {
     const result = await Promise.race([promise, timeout])
     return result as T
@@ -41,7 +38,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * Genera respuesta de Cohere
+ * Genera respuesta de Cohere (Chat API)
  */
 export async function cohereResponse(
   prompt: string,
@@ -63,26 +60,23 @@ export async function cohereResponse(
     try {
       attempt++
 
-      // Llamada a la API de Cohere
       const response = await withTimeout(
-        client.generate({
+        client.chat({
           model,
-          prompt,
-          maxTokens: maxTokens,
+          message: prompt,
           temperature,
-          k: 0,
-          p: 0.75,
-          frequencyPenalty: 0,
-          presencePenalty: 0,
+          maxTokens,
         }),
         timeoutMs
       )
 
-      // ✅ Acceso seguro a la respuesta
-      const generations = (response as { generations?: { text?: string }[] })?.generations
-      const output = generations?.[0]?.text ?? ""
+      const output =
+        (response as { text?: string })?.text?.trim() ?? ""
 
-      return output.trim()
+      if (!output)
+        throw new Error("Respuesta vacía de Cohere")
+
+      return output
     } catch (err) {
       lastError = err
       if (attempt > retries) break

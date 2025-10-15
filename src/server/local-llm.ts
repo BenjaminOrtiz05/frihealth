@@ -1,21 +1,24 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import bodyParser from "body-parser";
 import { loadModel, createCompletion } from "gpt4all";
+import type { InferenceModel } from "gpt4all";
 
 const app = express();
 app.use(bodyParser.json());
 
 const PORT = process.env.LLM_SERVER_PORT || 5050;
-const MODEL_PATH = process.env.GPT4ALL_MODEL_PATH;
+const MODEL_PATH = process.env.GPT4ALL_MODEL_PATH || "C:\Users\bortiz\AppData\Local\nomic.ai\GPT4All\Llama-3.2-1B-Instruct-Q4_0.gguf";
 
-let model: any = null;
+// 🔹 Usa un tipo genérico en lugar de `any`
 
-// 🔹 Inicializa el modelo (solo una vez)
-async function initModel() {
+let model: InferenceModel | null = null;
+
+// 🔹 Inicializa el modelo
+async function initModel(): Promise<InferenceModel> {
   console.log("🧩 Cargando modelo local desde:", MODEL_PATH);
   const inferenceModel = await loadModel("gpt4all", {
     modelPath: MODEL_PATH,
-    device: "cpu", // o "gpu" si tienes soporte
+    device: "cpu",
     verbose: true,
   });
   console.log("✅ Modelo cargado exitosamente");
@@ -23,11 +26,11 @@ async function initModel() {
 }
 
 // 🔹 Endpoint principal
-app.post("/generate", async (req, res) => {
+app.post("/generate", async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
 
-    if (!prompt) {
+    if (typeof prompt !== "string" || !prompt.trim()) {
       return res.status(400).json({ error: "Falta el prompt en el cuerpo." });
     }
 
@@ -43,11 +46,14 @@ app.post("/generate", async (req, res) => {
       nPredict: 256,
     });
 
-    const text = completion.choices[0].message.content;
+    const text = completion?.choices?.[0]?.message?.content ?? "";
     res.json({ response: text });
-  } catch (error: any) {
-    console.error("❌ Error al generar:", error);
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    // ✅ sin `any`, manejo seguro
+    const message =
+      error instanceof Error ? error.message : "Error desconocido al generar.";
+    console.error("❌ Error al generar:", message);
+    res.status(500).json({ error: message });
   }
 });
 

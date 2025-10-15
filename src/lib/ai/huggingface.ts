@@ -1,8 +1,6 @@
 /**
- * Hugging Face Inference v4.11.1
- * -------------------------------------------------------
- * 
- * ✅ Tipado completo y sin `any`
+ * Hugging Face Inference v4.11+
+ * Compatible con Mixtral y modelos Instruct
  */
 
 import { InferenceClient } from "@huggingface/inference"
@@ -17,18 +15,16 @@ type HFOpts = {
 
 const HF_KEY = process.env.HUGGINGFACE_API_KEY
 const DEFAULT_MODEL =
-  process.env.HUGGINGFACE_MODEL || "mistralai/Mixtral-8x7B-Instruct-v0.1"
+  process.env.HUGGINGFACE_MODEL || "HuggingFaceH4/zephyr-7b-beta"
 const DEFAULT_TIMEOUT = Number(process.env.HUGGINGFACE_TIMEOUT_MS || "10000")
 const DEFAULT_RETRIES = Number(process.env.HUGGINGFACE_MAX_RETRIES || "2")
 
-// Inicialización segura del cliente
 const client = HF_KEY ? new InferenceClient(HF_KEY) : null
 
 function sleep(ms: number): Promise<void> {
   return new Promise((res) => setTimeout(res, ms))
 }
 
-/** Envuelve una promesa con timeout controlado */
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timeoutId: NodeJS.Timeout
   const timeout = new Promise<never>((_, reject) => {
@@ -43,7 +39,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * Genera una respuesta desde Hugging Face (texto)
+ * Genera una respuesta desde Hugging Face
  */
 export async function huggingFaceResponse(
   prompt: string,
@@ -52,8 +48,7 @@ export async function huggingFaceResponse(
   if (!HF_KEY || !client)
     throw new Error("HUGGINGFACE_API_KEY no configurada")
 
-  if (!prompt.trim())
-    throw new Error("Prompt vacío")
+  if (!prompt.trim()) throw new Error("Prompt vacío")
 
   const model = opts.model || DEFAULT_MODEL
   const temperature = opts.temperature ?? 0.7
@@ -68,8 +63,8 @@ export async function huggingFaceResponse(
     try {
       attempt++
 
-      // Llamada al endpoint de texto
-      const response = await withTimeout(
+      // ✅ Usa el método textGeneration de forma tipada
+      const response = (await withTimeout(
         client.textGeneration({
           model,
           inputs: prompt,
@@ -81,16 +76,11 @@ export async function huggingFaceResponse(
           },
         }),
         timeoutMs
-      )
+      )) as { generated_text?: string }
 
-      // Tipado estricto de respuesta
-      const output =
-        typeof response.generated_text === "string"
-          ? response.generated_text.trim()
-          : ""
+      const output = response.generated_text?.trim() ?? ""
 
       if (!output) throw new Error("Respuesta vacía del modelo Hugging Face")
-
       return output
     } catch (err) {
       lastError = err

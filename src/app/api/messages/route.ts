@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       aiText = await getAIResponse(content, {
         temperature: 0.5,
         maxTokens: 300,
-        order: ["cohere", "huggingface"],
+        order: ["cohere", "huggingface", "gpt4all"],
       })
     } catch (error) {
       console.warn("⚠️ No se pudo generar respuesta de IA:", error)

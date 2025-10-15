@@ -8,9 +8,9 @@
 
 import { cohereResponse } from "./cohere"
 import { huggingFaceResponse } from "./huggingface"
-//import { gpt4allResponse } from "./gpt4all"
+import { gpt4allResponse } from "./gpt4all"
 
-export type FallbackOrder = Array<"cohere" | "huggingface" >
+export type FallbackOrder = Array<"cohere" | "huggingface" | "gpt4all">
 
 export interface AIResponseOptions {
   temperature?: number
@@ -30,7 +30,7 @@ export async function getAIResponse(
 ): Promise<string> {
   if (!prompt.trim()) throw new Error("Prompt vacío")
 
-  const order: FallbackOrder = opts.order || ["cohere", "huggingface"]
+  const order: FallbackOrder = opts.order || ["cohere", "huggingface", "gpt4all"]
   const errors: string[] = []
 
   for (const model of order) {
@@ -40,8 +40,8 @@ export async function getAIResponse(
           return await cohereResponse(prompt, opts)
         case "huggingface":
           return await huggingFaceResponse(prompt, opts)
-        // case "gpt4all":
-        //   return await gpt4allResponse(prompt, opts)
+        case "gpt4all":
+          return await gpt4allResponse(prompt, opts)
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
