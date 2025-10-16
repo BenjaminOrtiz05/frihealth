@@ -1,10 +1,17 @@
+// src/hooks/useConversations.ts
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import type { Conversation } from "@/types"
+
+export type ConversationPreview = {
+  id: string
+  title: string
+  lastMessage: string
+  updatedAt: string | Date
+}
 
 export function useConversations(token?: string) {
-  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [conversations, setConversations] = useState<ConversationPreview[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -13,11 +20,11 @@ export function useConversations(token?: string) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/conversations", {
+      const res = await fetch("/api/conversations/with-last-message", {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error("Error al obtener conversaciones")
-      const data: Conversation[] = await res.json()
+      const data: ConversationPreview[] = await res.json()
       setConversations(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -27,7 +34,7 @@ export function useConversations(token?: string) {
   }, [token])
 
   const createConversation = useCallback(
-    async (title?: string, firstMessage?: string): Promise<Conversation | null> => {
+    async (title?: string, firstMessage?: string): Promise<ConversationPreview | null> => {
       if (!token) return null
       setLoading(true)
       setError(null)
@@ -41,9 +48,19 @@ export function useConversations(token?: string) {
           body: JSON.stringify({ title, firstMessage }),
         })
         if (!res.ok) throw new Error("Error al crear conversación")
-        const data: Conversation = await res.json()
-        setConversations((prev) => [data, ...prev])
-        return data
+        const created = await res.json()
+
+        // El endpoint /api/conversations devuelve la conversación completa (incluye messages)
+        // Construimos un ConversationPreview para mantener consistencia con el hook
+        const preview = {
+          id: created.id,
+          title: created.title ?? `Conversación ${created.id.slice(0, 6)}`,
+          lastMessage: created.messages?.[0]?.content ?? (firstMessage ?? "Sin mensajes aún"),
+          updatedAt: created.updatedAt,
+        } as ConversationPreview
+
+        setConversations((prev) => [preview, ...prev])
+        return preview
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
         return null

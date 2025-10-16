@@ -39,6 +39,7 @@ const sendMessage = useCallback(
       createdAt: new Date(),
     }
 
+    // Mostrar mensaje inmediatamente
     setMessages((prev) => [...prev, tempMessage])
 
     try {
@@ -54,10 +55,19 @@ const sendMessage = useCallback(
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Error al enviar mensaje")
 
-      // 🔹 El backend devuelve [userMsg, aiMsg]
-      const newMessages: ChatMessage[] = Array.isArray(data) ? data : [data]
+      // 🔹 Ajustar al nuevo formato del backend
+      const newMessages: ChatMessage[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data.messages)
+        ? data.messages
+        : [data]
 
-      setMessages((prev) => [...prev.filter((msg) => msg.id !== tempMessage.id), ...newMessages])
+      // Reemplaza el mensaje temporal y agrega los nuevos
+      setMessages((prev) => [
+        ...prev.filter((msg) => msg.id !== tempMessage.id),
+        ...newMessages,
+      ])
+
       return newMessages
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

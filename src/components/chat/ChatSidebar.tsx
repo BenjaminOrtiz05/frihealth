@@ -1,3 +1,4 @@
+// src/components/chat/ChatSidebar.tsx
 "use client"
 
 import Link from "next/link"
@@ -5,11 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bot } from "lucide-react"
 import ChatCard from "@/components/chat/ChatHistoryCard"
-import type { Conversation, User } from "@/types"
+import type { ConversationPreview } from "@/hooks/useConversations"
+import type { User } from "@/types"
 
 interface ChatSidebarProps {
   user: User | null
-  conversations: Conversation[]
+  conversations: ConversationPreview[]
   selectedConversationId: string | null
   onSelectConversation: (id: string) => void
   onCreateConversation: () => void
@@ -69,14 +71,18 @@ export default function ChatSidebar({
           </div>
         ) : conversations.length > 0 ? (
           conversations.map((conv) => {
-            const title = `Conversación ${conv.id.slice(0, 6)}`
-            const preview = "Sin mensajes aún"
+            const title = conv.title || `Conversación ${conv.id.slice(0, 6)}`
+            const preview = conv.lastMessage || "Sin mensajes aún"
 
             return (
               <div
                 key={conv.id}
                 onClick={() => onSelectConversation(conv.id)}
-                className={conv.id === selectedConversationId ? "ring-2 ring-emerald-200 rounded-md" : ""}
+                className={
+                  conv.id === selectedConversationId
+                    ? "ring-2 ring-emerald-200 rounded-md"
+                    : ""
+                }
               >
                 <ChatCard title={title} preview={preview} />
               </div>

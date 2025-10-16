@@ -1,3 +1,4 @@
+// src/app/api/messages/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db/prisma"
 import { verifyAuth } from "@/lib/auth"
@@ -22,25 +23,47 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAuth(req)
-      if (!user) return NextResponse.json({ error: "Usuario no autenticado" }, { status: 401 })
+    // Intentar verificar usuario
+    const user = await verifyAuth(req).catch(() => null)
     const { conversationId, content, role } = await req.json()
 
-    if (!conversationId || !content || !role)
+    if (!content || !role)
       return NextResponse.json({ error: "Datos incompletos" }, { status: 400 })
 
-    // 🔹 Guardar mensaje del usuario
-    const userMsg = await prisma.message.create({
-      data: { conversationId, content, role },
-    })
+    let activeConversationId = conversationId
 
-    // 🔹 Actualizar conversación
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { updatedAt: new Date() },
-    })
+    // 🔹 Si no hay conversación (usuario invitado), crear una temporal
+    if (!activeConversationId) {
+      if (user) {
+        const newConv = await prisma.conversation.create({
+          data: {
+            title: "Nueva conversación",
+            userId: user.id,
+          },
+        })
+        activeConversationId = newConv.id
+      } else {
+        // Crear ID temporal en memoria (no persistente)
+        activeConversationId = crypto.randomUUID()
+      }
+    }
 
-    // 🔹 Llamar a la IA con fallback
+    // 🔹 Guardar mensaje del usuario (si está logueado)
+    let userMsg = {
+      id: crypto.randomUUID(),
+      conversationId: activeConversationId,
+      content,
+      role,
+      createdAt: new Date(),
+    }
+
+    if (user) {
+      userMsg = await prisma.message.create({
+        data: { conversationId: activeConversationId, content, role },
+      })
+    }
+
+    // 🔹 Generar respuesta IA
     let aiText = "Lo siento, el servicio de IA no está disponible por ahora."
     try {
       aiText = await getAIResponse(content, {
@@ -53,17 +76,39 @@ export async function POST(req: NextRequest) {
     }
 
     // 🔹 Guardar respuesta del asistente
-    const aiMsg = await prisma.message.create({
-      data: {
-        conversationId,
-        content: aiText,
-        role: "assistant",
-      },
-    })
+    let aiMsg = {
+      id: crypto.randomUUID(),
+      conversationId: activeConversationId,
+      content: aiText,
+      role: "assistant",
+      createdAt: new Date(),
+    }
 
-    return NextResponse.json([userMsg, aiMsg])
+    if (user) {
+      aiMsg = await prisma.message.create({
+        data: {
+          conversationId: activeConversationId,
+          content: aiText,
+          role: "assistant",
+        },
+      })
+    }
+
+    // 🔹 Actualizar conversación (solo si usuario autenticado)
+    if (user) {
+      await prisma.conversation.update({
+        where: { id: activeConversationId },
+        data: { updatedAt: new Date() },
+      })
+    }
+
+    // 🔹 Devolver ambos mensajes y la conversación
+    return NextResponse.json({
+      conversationId: activeConversationId,
+      messages: [userMsg, aiMsg],
+    })
   } catch (err) {
-    console.error("Error al crear mensaje:", err )
+    console.error("Error al crear mensaje:", err)
     return NextResponse.json({ error: "Error al crear mensaje" }, { status: 500 })
   }
 }
