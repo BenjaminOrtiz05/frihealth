@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Intentar verificar usuario
+    // Intentar obtener usuario; no aborta si no hay sesión
     const user = await verifyAuth(req).catch(() => null)
     const { conversationId, content, role } = await req.json()
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     let activeConversationId = conversationId
 
-    // 🔹 Si no hay conversación (usuario invitado), crear una temporal
+    // 🔹 Crear conversación si no existe (solo persistente si hay usuario)
     if (!activeConversationId) {
       if (user) {
         const newConv = await prisma.conversation.create({
@@ -43,12 +43,11 @@ export async function POST(req: NextRequest) {
         })
         activeConversationId = newConv.id
       } else {
-        // Crear ID temporal en memoria (no persistente)
         activeConversationId = crypto.randomUUID()
       }
     }
 
-    // 🔹 Guardar mensaje del usuario (si está logueado)
+    // 🔹 Construir userMsg (persistente solo si user)
     let userMsg = {
       id: crypto.randomUUID(),
       conversationId: activeConversationId,
@@ -63,19 +62,35 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 🔹 Generar respuesta IA
+    // 🧩 Recuperar últimos mensajes para contexto (los más recientes)
+    let recentMessages: { role: string; content: string }[] = []
+    if (user) {
+      const raw = await prisma.message.findMany({
+        where: { conversationId: activeConversationId },
+        orderBy: { createdAt: "desc" }, // tomar los últimos
+        take: 8,
+      })
+      // revertimos para mantener orden cronológico ascendente
+      recentMessages = raw.reverse().map((m) => ({
+        role: m.role,
+        content: m.content,
+      }))
+    }
+
+    // 🔹 Generar respuesta IA con personalidad/contexto
     let aiText = "Lo siento, el servicio de IA no está disponible por ahora."
     try {
       aiText = await getAIResponse(content, {
         temperature: 0.5,
-        maxTokens: 300,
+        maxTokens: 400,
         order: ["cohere", "huggingface", "gpt4all"],
+        contextMessages: recentMessages,
       })
     } catch (error) {
       console.warn("⚠️ No se pudo generar respuesta de IA:", error)
     }
 
-    // 🔹 Guardar respuesta del asistente
+    // 🔹 Construir aiMsg (persistente solo si user)
     let aiMsg = {
       id: crypto.randomUUID(),
       conversationId: activeConversationId,
@@ -94,7 +109,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 🔹 Actualizar conversación (solo si usuario autenticado)
+    // 🔹 Actualizar fecha de conversación (si es persistente)
     if (user) {
       await prisma.conversation.update({
         where: { id: activeConversationId },
@@ -102,11 +117,8 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 🔹 Devolver ambos mensajes y la conversación
-    return NextResponse.json({
-      conversationId: activeConversationId,
-      messages: [userMsg, aiMsg],
-    })
+    // IMPORTANTE: devolver array [userMsg, aiMsg] -> compatibilidad frontend
+    return NextResponse.json([userMsg, aiMsg])
   } catch (err) {
     console.error("Error al crear mensaje:", err)
     return NextResponse.json({ error: "Error al crear mensaje" }, { status: 500 })
