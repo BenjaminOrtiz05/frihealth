@@ -76,13 +76,13 @@ export default function ChatSidebar({
 
             return (
               <div
-                key={conv.id}
+                key={`conv-${conv.id}`}
                 onClick={() => onSelectConversation(conv.id)}
-                className={
+                className={`cursor-pointer transition-all ${
                   conv.id === selectedConversationId
                     ? "ring-2 ring-emerald-200 rounded-md"
                     : ""
-                }
+                }`}
               >
                 <ChatCard title={title} preview={preview} />
               </div>

@@ -33,6 +33,18 @@ export function useConversations(token?: string) {
     }
   }, [token])
 
+  // 🔹 Actualiza dinámicamente el último mensaje (solo del usuario)
+  const updateLastMessage = useCallback(
+    (conversationId: string, newMessage: string) => {
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === conversationId ? { ...conv, lastMessage: newMessage } : conv
+        )
+      )
+    },
+    []
+  )
+
   const createConversation = useCallback(
     async (title?: string, firstMessage?: string): Promise<ConversationPreview | null> => {
       if (!token) return null
@@ -50,8 +62,6 @@ export function useConversations(token?: string) {
         if (!res.ok) throw new Error("Error al crear conversación")
         const created = await res.json()
 
-        // El endpoint /api/conversations devuelve la conversación completa (incluye messages)
-        // Construimos un ConversationPreview para mantener consistencia con el hook
         const preview = {
           id: created.id,
           title: created.title ?? `Conversación ${created.id.slice(0, 6)}`,
@@ -71,9 +81,19 @@ export function useConversations(token?: string) {
     [token]
   )
 
+  // 🔹 Refresca el historial automáticamente cada 30 segundos (por si hay otra pestaña)
   useEffect(() => {
     fetchConversations()
+    const interval = setInterval(() => fetchConversations(), 30000)
+    return () => clearInterval(interval)
   }, [fetchConversations])
 
-  return { conversations, loading, error, fetchConversations, createConversation }
+  return {
+    conversations,
+    loading,
+    error,
+    fetchConversations,
+    createConversation,
+    updateLastMessage, // <-- Añadido
+  }
 }
