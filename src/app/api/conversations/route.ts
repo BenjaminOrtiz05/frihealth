@@ -52,3 +52,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Error al crear conversación" }, { status: 500 })
   }
 }
+
+// 🔹 Eliminar una conversación (y sus mensajes asociados)
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await verifyAuth(req)
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { conversationId } = await req.json()
+    if (!conversationId) {
+      return NextResponse.json({ error: "conversationId requerido" }, { status: 400 })
+    }
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+    })
+
+    if (!conversation || conversation.userId !== user.id) {
+      return NextResponse.json({ error: "No autorizado o conversación no encontrada" }, { status: 403 })
+    }
+
+    // 🔸 Esto elimina en cascada todos los mensajes
+    await prisma.message.deleteMany({ where: { conversationId } })
+    await prisma.conversation.delete({ where: { id: conversationId } })
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error("Error al eliminar conversación:", err)
+    return NextResponse.json({ error: "Error al eliminar conversación" }, { status: 500 })
+  }
+}

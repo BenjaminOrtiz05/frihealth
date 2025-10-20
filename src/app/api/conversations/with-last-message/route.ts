@@ -4,8 +4,7 @@ import { prisma } from "@/lib/db/prisma"
 import { verifyAuth } from "@/lib/auth"
 
 /**
- * Devuelve las conversaciones del usuario con el último mensaje (preview).
- * No modifica esquemas Prisma; devuelve un DTO simple.
+ * Devuelve las conversaciones del usuario con el último mensaje (solo del usuario).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -19,8 +18,9 @@ export async function GET(req: NextRequest) {
       orderBy: { updatedAt: "desc" },
       include: {
         messages: {
+          where: { role: "user" },
           orderBy: { createdAt: "desc" },
-          take: 1, // solo el último mensaje
+          take: 1,
           select: { content: true },
         },
       },

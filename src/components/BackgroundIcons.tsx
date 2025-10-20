@@ -1,25 +1,30 @@
 "use client"
 
+import { useMemo } from "react"
+
 export default function BackgroundPattern() {
-  // Array de colores posibles para los íconos
   const colors = ["#4ade80", "#22d3ee", "#facc15", "#f87171", "#a78bfa"]
 
-  // Generar posiciones y colores aleatorios para los íconos
-  const icons = Array.from({ length: 500 }).map(() => ({
-    top: Math.random() * 100 + "%",
-    left: Math.random() * 100 + "%",
-    color: colors[Math.floor(Math.random() * colors.length)],
-  }))
+  // Generar el patrón solo una vez
+  const icons = useMemo(
+    () =>
+      Array.from({ length: 500 }).map(() => ({
+        top: Math.random() * 100 + "%",
+        left: Math.random() * 100 + "%",
+        color: colors[Math.floor(Math.random() * colors.length)],
+      })),
+    []
+  )
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {icons.map((icon, index) => (
         <svg
           key={index}
           xmlns="http://www.w3.org/2000/svg"
           width="16"
           height="16"
-          className="absolute"
+          className="absolute opacity-40"
           style={{ top: icon.top, left: icon.left }}
         >
           <path

@@ -2,11 +2,12 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bot } from "lucide-react"
 import ChatCard from "@/components/chat/ChatHistoryCard"
-import type { ConversationPreview } from "@/hooks/useConversations"
+import type { ConversationPreview } from "@/types"
 import type { User } from "@/types"
 
 interface ChatSidebarProps {
@@ -15,6 +16,7 @@ interface ChatSidebarProps {
   selectedConversationId: string | null
   onSelectConversation: (id: string) => void
   onCreateConversation: () => void
+  onDeleteConversation: (id: string) => void
 }
 
 export default function ChatSidebar({
@@ -23,7 +25,15 @@ export default function ChatSidebar({
   selectedConversationId,
   onSelectConversation,
   onCreateConversation,
+  onDeleteConversation,
 }: ChatSidebarProps) {
+  const router = useRouter()
+
+  const handleNewConversation = () => {
+    onCreateConversation()
+    router.push("/chat") // Redirige al usuario a /chat
+  }
+
   return (
     <aside className="w-72 h-full border-r bg-white/90 backdrop-blur-sm shadow-md flex flex-col">
       {/* Logo */}
@@ -38,7 +48,7 @@ export default function ChatSidebar({
       {user && (
         <div className="p-4 border-b flex justify-center">
           <Button
-            onClick={onCreateConversation}
+            onClick={handleNewConversation}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all"
           >
             Nueva conversación
@@ -77,14 +87,17 @@ export default function ChatSidebar({
             return (
               <div
                 key={`conv-${conv.id}`}
-                onClick={() => onSelectConversation(conv.id)}
                 className={`cursor-pointer transition-all ${
-                  conv.id === selectedConversationId
-                    ? "ring-2 ring-emerald-200 rounded-md"
-                    : ""
+                  conv.id === selectedConversationId ? "ring-2 ring-emerald-200 rounded-md" : ""
                 }`}
               >
-                <ChatCard title={title} preview={preview} />
+                <ChatCard
+                  title={title}
+                  preview={preview}
+                  conversationId={conv.id}
+                  onDelete={() => onDeleteConversation(conv.id)}
+                  onSelect={() => onSelectConversation(conv.id)}
+                />
               </div>
             )
           })

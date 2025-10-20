@@ -46,6 +46,14 @@ export interface Conversation {
   updatedAt: Date
 }
 
+// Vista previa de conversación (frontend)
+export interface ConversationPreview {
+  id: string
+  title: string
+  lastMessage: string
+  updatedAt: string | Date
+}
+
 // Registro de síntomas
 export interface SymptomLog {
   id: string

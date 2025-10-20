@@ -17,7 +17,7 @@ export default function ChatWithIdPage() {
   const chatId = params.id as string
 
   const { user, token, loading: authLoading } = useAuth()
-  const { conversations } = useConversations(token ?? undefined)
+  const { conversations, deleteConversation } = useConversations(token ?? undefined)
   const { messages, sendMessage } = useMessages(chatId, token ?? undefined)
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
@@ -54,6 +54,17 @@ export default function ChatWithIdPage() {
     }
   }
 
+  const handleDeleteConversation = async (id: string) => {
+    if (!confirm("¿Seguro que deseas eliminar esta conversación?")) return
+    try {
+      await deleteConversation(id)
+      // Opcional: si estás en la conversación eliminada, redirigir a /chat
+      if (id === chatId) router.push("/chat")
+    } catch (err) {
+      console.error("Error al eliminar conversación:", err)
+    }
+  }
+
   if (authLoading) return <div>Cargando...</div>
 
   return (
@@ -66,6 +77,7 @@ export default function ChatWithIdPage() {
         selectedConversationId={chatId}
         onSelectConversation={(id) => router.push(`/chat/${id}`)}
         onCreateConversation={() => {}}
+        onDeleteConversation={handleDeleteConversation}
       />
 
       <div className="flex flex-col flex-1 p-6 relative z-10">
