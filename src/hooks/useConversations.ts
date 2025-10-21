@@ -37,7 +37,7 @@ export function useConversations(token?: string) {
       .trim()
 
     // Toma las primeras 6-8 palabras máximo
-    const words = cleaned.split(" ").slice(0, 8).join(" ")
+    const words = cleaned.split(" ").slice(0, 5).join(" ")
     const title =
       words.length > 0
         ? words.charAt(0).toUpperCase() + words.slice(1) + (cleaned.split(" ").length > 8 ? "..." : "")

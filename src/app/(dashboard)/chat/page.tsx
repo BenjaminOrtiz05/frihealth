@@ -15,6 +15,7 @@ export default function ChatPage() {
   const { conversations, createConversation, deleteConversation } = useConversations(token ?? undefined)
   const [isCreating, setIsCreating] = useState(false)
 
+  // ✅ Crear conversación y redirigir
   const handleStartConversation = async (content: string) => {
     if (!content.trim() || isCreating) return
     setIsCreating(true)
@@ -23,12 +24,12 @@ export default function ChatPage() {
       let conversationId: string
 
       if (user) {
-        // ✅ Crear conversación con título generado automáticamente
+        // 🔹 Crear conversación con título dinámico
         const newConv = await createConversation(undefined, content)
         if (!newConv?.id) throw new Error("No se pudo crear la conversación")
         conversationId = newConv.id
       } else {
-        // ✅ Usuario anónimo (local)
+        // 🔹 Usuario anónimo
         conversationId = crypto.randomUUID()
         localStorage.setItem(
           `anon-messages-${conversationId}`,

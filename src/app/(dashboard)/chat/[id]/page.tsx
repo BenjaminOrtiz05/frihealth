@@ -17,7 +17,7 @@ export default function ChatWithIdPage() {
   const chatId = params.id as string
 
   const { user, token, loading: authLoading } = useAuth()
-  const { conversations, deleteConversation } = useConversations(token ?? undefined)
+  const { conversations, deleteConversation, updateLastMessage } = useConversations(token ?? undefined)
   const { messages, sendMessage } = useMessages(chatId, token ?? undefined)
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
@@ -30,17 +30,23 @@ export default function ChatWithIdPage() {
     }
   }, [chatId, user])
 
-  // 🔹 Sincronizar con mensajes persistentes del backend
+  // 🔹 Sincronizar con mensajes del backend
   useEffect(() => {
     if (user) setLocalMessages(messages)
   }, [messages, user])
 
+  // ✅ Enviar mensaje + mantener coherencia con conversación
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return
 
     if (user) {
       const msg = await sendMessage(content)
-      if (msg) setLocalMessages((prev) => [...prev, ...msg])
+
+      if (msg) {
+        setLocalMessages((prev) => [...prev, ...msg])
+        // 🔹 Actualizar preview del sidebar
+        updateLastMessage(chatId, content)
+      }
     } else {
       const tempMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -58,7 +64,6 @@ export default function ChatWithIdPage() {
     if (!confirm("¿Seguro que deseas eliminar esta conversación?")) return
     try {
       await deleteConversation(id)
-      // Opcional: si estás en la conversación eliminada, redirigir a /chat
       if (id === chatId) router.push("/chat")
     } catch (err) {
       console.error("Error al eliminar conversación:", err)
