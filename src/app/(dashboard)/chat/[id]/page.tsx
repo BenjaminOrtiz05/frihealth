@@ -27,7 +27,12 @@ export default function ChatWithIdPage() {
   useEffect(() => {
     if (!user) {
       const saved = localStorage.getItem(`anon-messages-${chatId}`)
-      if (saved) setLocalMessages(JSON.parse(saved))
+      if (saved) {
+        setLocalMessages(JSON.parse(saved))
+      } else {
+        // Evita errores si no existe el array aún
+        localStorage.setItem(`anon-messages-${chatId}`, JSON.stringify([]))
+      }
     }
   }, [chatId, user])
 

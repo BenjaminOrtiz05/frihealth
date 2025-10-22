@@ -23,23 +23,28 @@ export default function ChatPage() {
       let conversationId: string
 
       if (user) {
-        // ✅ Crear conversación y enviar el mensaje inicial en el backend
+        // ✅ Usuario autenticado: crear conversación en el backend
         const newConv = await createConversation(undefined, content)
         if (!newConv?.id) throw new Error("No se pudo crear la conversación")
         conversationId = newConv.id
       } else {
-        // 🔹 Usuario anónimo
+        // 🔹 Usuario anónimo: crear conversación local
         conversationId = crypto.randomUUID()
+        const firstMsg = {
+          id: crypto.randomUUID(),
+          role: "user",
+          content,
+          createdAt: new Date(),
+        }
+
         localStorage.setItem(
           `anon-messages-${conversationId}`,
-          JSON.stringify([
-            { id: crypto.randomUUID(), role: "user", content, createdAt: new Date() },
-          ])
+          JSON.stringify([firstMsg])
         )
       }
 
-      // ✅ Redirigir al chat recién creado sin volver a enviar el mensaje
-      router.replace(`/chat/${conversationId}?firstSent=true`)
+      // ✅ Redirigir sin parámetros extra
+      router.push(`/chat/${conversationId}`)
     } catch (error) {
       console.error("Error al iniciar conversación:", error)
     } finally {
