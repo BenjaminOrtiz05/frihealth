@@ -1,3 +1,5 @@
+// src/types/index.ts
+
 // Roles en mensajes y usuarios
 export type Role = "user" | "assistant" | "system"
 
@@ -37,7 +39,7 @@ export interface User {
   createdAt: Date
 }
 
-// Conversación
+// Conversación completa
 export interface Conversation {
   id: string
   title: string
@@ -46,7 +48,7 @@ export interface Conversation {
   updatedAt: Date
 }
 
-// Vista previa de conversación (frontend)
+// Preview para el sidebar / listado (versión ligera)
 export interface ConversationPreview {
   id: string
   title: string

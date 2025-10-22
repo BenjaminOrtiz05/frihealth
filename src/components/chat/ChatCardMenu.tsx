@@ -11,7 +11,7 @@ import { MoreVertical, Trash } from "lucide-react"
 
 interface ChatCardMenuProps {
   conversationId: string
-  onDelete: () => void
+  onDelete: (conversationId: string) => void
 }
 
 export default function ChatCardMenu({ conversationId, onDelete }: ChatCardMenuProps) {
@@ -25,7 +25,7 @@ export default function ChatCardMenu({ conversationId, onDelete }: ChatCardMenuP
 
       <DropdownMenuContent align="end" className="w-36">
         <DropdownMenuItem
-          onClick={onDelete}
+          onClick={() => onDelete(conversationId)}
           className="text-red-600 hover:bg-red-100 flex items-center gap-2 cursor-pointer"
         >
           <Trash className="w-4 h-4" />

@@ -27,12 +27,13 @@ export async function POST(req: NextRequest) {
     const user = await verifyAuth(req).catch(() => null)
     const { conversationId, content, role } = await req.json()
 
-    if (!content || !role)
+    if (!content || !role) {
       return NextResponse.json({ error: "Datos incompletos" }, { status: 400 })
+    }
 
     let activeConversationId = conversationId
 
-    // 🔹 Crear conversación si no existe (solo persistente si hay usuario)
+    // 🔹 Crear conversación si no existe (persistente solo si hay usuario)
     if (!activeConversationId) {
       if (user) {
         const newConv = await prisma.conversation.create({
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     if (user) {
       const raw = await prisma.message.findMany({
         where: { conversationId: activeConversationId },
-        orderBy: { createdAt: "desc" }, // tomar los últimos
+        orderBy: { createdAt: "desc" },
         take: 8,
       })
       // revertimos para mantener orden cronológico ascendente
@@ -117,8 +118,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // IMPORTANTE: devolver array [userMsg, aiMsg] -> compatibilidad frontend
-    return NextResponse.json([userMsg, aiMsg])
+    // IMPORTANTE: devolver objeto con conversationId y mensajes -> frontend lo soporta
+    return NextResponse.json({
+      conversationId: activeConversationId,
+      messages: [userMsg, aiMsg],
+    })
   } catch (err) {
     console.error("Error al crear mensaje:", err)
     return NextResponse.json({ error: "Error al crear mensaje" }, { status: 500 })

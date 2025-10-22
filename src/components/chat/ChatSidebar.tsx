@@ -30,8 +30,9 @@ export default function ChatSidebar({
   const router = useRouter()
 
   const handleNewConversation = () => {
+    // Mantén la función externa (si desea crear en BD) y redirige a /chat (vacío)
     onCreateConversation()
-    router.push("/chat") // Redirige al usuario a /chat
+    router.push("/chat")
   }
 
   return (

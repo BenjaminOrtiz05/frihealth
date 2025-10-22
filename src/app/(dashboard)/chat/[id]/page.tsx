@@ -1,3 +1,4 @@
+// src/app/(dashboard)/chat/[id]/page.tsx
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
@@ -44,7 +45,7 @@ export default function ChatWithIdPage() {
 
       if (msg) {
         setLocalMessages((prev) => [...prev, ...msg])
-        // 🔹 Actualizar preview del sidebar
+        // 🔹 Actualizar preview del sidebar (solo con mensaje del user)
         updateLastMessage(chatId, content)
       }
     } else {

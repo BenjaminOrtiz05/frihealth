@@ -15,7 +15,6 @@ export default function ChatPage() {
   const { conversations, createConversation, deleteConversation } = useConversations(token ?? undefined)
   const [isCreating, setIsCreating] = useState(false)
 
-  // ✅ Crear conversación y redirigir
   const handleStartConversation = async (content: string) => {
     if (!content.trim() || isCreating) return
     setIsCreating(true)
@@ -24,7 +23,7 @@ export default function ChatPage() {
       let conversationId: string
 
       if (user) {
-        // 🔹 Crear conversación con título dinámico
+        // ✅ Crear conversación y enviar el mensaje inicial en el backend
         const newConv = await createConversation(undefined, content)
         if (!newConv?.id) throw new Error("No se pudo crear la conversación")
         conversationId = newConv.id
@@ -34,17 +33,13 @@ export default function ChatPage() {
         localStorage.setItem(
           `anon-messages-${conversationId}`,
           JSON.stringify([
-            {
-              id: crypto.randomUUID(),
-              role: "user",
-              content,
-              createdAt: new Date(),
-            },
+            { id: crypto.randomUUID(), role: "user", content, createdAt: new Date() },
           ])
         )
       }
 
-      router.replace(`/chat/${conversationId}`)
+      // ✅ Redirigir al chat recién creado sin volver a enviar el mensaje
+      router.replace(`/chat/${conversationId}?firstSent=true`)
     } catch (error) {
       console.error("Error al iniciar conversación:", error)
     } finally {
@@ -81,9 +76,7 @@ export default function ChatPage() {
           <ChatInput onSend={handleStartConversation} disabled={isCreating} />
           {isCreating && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-xl">
-              <span className="text-sm text-gray-700 animate-pulse">
-                Creando conversación...
-              </span>
+              <span className="text-sm text-gray-700 animate-pulse">Creando conversación...</span>
             </div>
           )}
         </div>

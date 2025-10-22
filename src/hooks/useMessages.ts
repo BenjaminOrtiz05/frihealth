@@ -26,59 +26,55 @@ export function useMessages(conversationId?: string, token?: string) {
     }
   }, [conversationId, token])
 
-const sendMessage = useCallback(
-  async (content: string, role: "user" | "assistant" = "user") => {
-    if (!conversationId) return null
-    setLoading(true)
-    setError(null)
+  const sendMessage = useCallback(
+    async (content: string, role: "user" | "assistant" = "user") => {
+      if (!conversationId) return null
+      const tempUserMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role,
+        content,
+        createdAt: new Date(),
+      }
 
-    const tempMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role,
-      content,
-      createdAt: new Date(),
-    }
+      // Mostrar mensaje del usuario de inmediato
+      setMessages((prev) => [...prev, tempUserMsg])
 
-    // Mostrar mensaje inmediatamente
-    setMessages((prev) => [...prev, tempMessage])
+      try {
+        const res = await fetch(`/api/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ content, conversationId, role }),
+        })
 
-    try {
-      const res = await fetch(`/api/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ content, conversationId, role }),
-      })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || "Error al enviar mensaje")
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Error al enviar mensaje")
+        // 🔹 Siempre esperamos un array [userMsg, aiMsg]
+        const newMessages: ChatMessage[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data.messages)
+          ? data.messages
+          : [data]
 
-      // 🔹 Ajustar al nuevo formato del backend
-      const newMessages: ChatMessage[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data.messages)
-        ? data.messages
-        : [data]
+        // ✅ Reemplazar mensaje temporal por los reales (user + ai)
+        setMessages((prev) => [
+          ...prev.filter((msg) => msg.id !== tempUserMsg.id),
+          ...newMessages,
+        ])
 
-      // Reemplaza el mensaje temporal y agrega los nuevos
-      setMessages((prev) => [
-        ...prev.filter((msg) => msg.id !== tempMessage.id),
-        ...newMessages,
-      ])
-
-      return newMessages
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id))
-      return null
-    } finally {
-      setLoading(false)
-    }
-  },
-  [conversationId, token]
-)
+        return newMessages
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+        // Revertir mensaje temporal si falla
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempUserMsg.id))
+        return null
+      }
+    },
+    [conversationId, token]
+  )
 
   useEffect(() => {
     fetchMessages()

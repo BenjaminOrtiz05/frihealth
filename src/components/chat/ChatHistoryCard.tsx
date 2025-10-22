@@ -9,7 +9,7 @@ interface ChatCardProps {
   title: string
   preview: string
   conversationId: string
-  onDelete: () => void
+  onDelete: (conversationId: string) => void
   onSelect: () => void
 }
 

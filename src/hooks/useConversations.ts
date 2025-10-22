@@ -27,33 +27,32 @@ export function useConversations(token?: string) {
     }
   }, [token])
 
-  // 🔹 Generador rápido de títulos
+  // 🔹 Generador rápido de títulos (sin usar \p{L} para evitar flags TS)
   const generateTitleFromMessage = (message: string): string => {
     if (!message) return "Nueva conversación"
-    // Limpia caracteres raros, reduce longitud y genera resumen simple
+    // Sustituir múltiples espacios, eliminar caracteres no alfanuméricos básicos (mantenemos acentos si tu fuente los soporta)
     const cleaned = message
       .replace(/\s+/g, " ")
-      .replace(/[^\p{L}\p{N}\s]/gu, "")
+      .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s]/g, "")
       .trim()
 
-    // Toma las primeras 6-8 palabras máximo
+    // Tomar hasta 5 palabras para un título corto
     const words = cleaned.split(" ").slice(0, 5).join(" ")
     const title =
       words.length > 0
-        ? words.charAt(0).toUpperCase() + words.slice(1) + (cleaned.split(" ").length > 8 ? "..." : "")
+        ? words.charAt(0).toUpperCase() + words.slice(1) + (cleaned.split(" ").length > 5 ? "..." : "")
         : "Nueva conversación"
 
     return title
   }
 
-  // 🔹 Crear conversación con título automático
+  // 🔹 Crear conversación con título automático (si no se pasa title)
   const createConversation = useCallback(
     async (title?: string, firstMessage?: string): Promise<ConversationPreview | null> => {
       if (!token) return null
       setLoading(true)
       setError(null)
       try {
-        // Generar título basado en mensaje, si no hay uno
         const generatedTitle = title && title !== "Nueva conversación"
           ? title
           : generateTitleFromMessage(firstMessage ?? "")
@@ -70,7 +69,11 @@ export function useConversations(token?: string) {
           }),
         })
 
-        if (!res.ok) throw new Error("Error al crear conversación")
+        if (!res.ok) {
+          const body = await res.text().catch(() => null)
+          throw new Error(`Error al crear conversación: ${body ?? res.statusText}`)
+        }
+
         const created = await res.json()
 
         const preview: ConversationPreview = {
@@ -120,8 +123,10 @@ export function useConversations(token?: string) {
           },
           body: JSON.stringify({ conversationId }),
         })
-
-        if (!res.ok) throw new Error("Error al eliminar conversación")
+        if (!res.ok) {
+          const body = await res.text().catch(() => null)
+          throw new Error(`Error al eliminar conversación: ${body ?? res.statusText}`)
+        }
         setConversations((prev) => prev.filter((c) => c.id !== conversationId))
         return true
       } catch (err) {
