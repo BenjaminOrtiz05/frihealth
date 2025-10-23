@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db/prisma"
 import { verifyAuth } from "@/lib/auth"
 import { getAIResponse } from "@/lib/ai"
 
+/**
+ * 🔹 GET → Obtener todos los mensajes de una conversación
+ */
 export async function GET(req: NextRequest) {
   const conversationId = req.nextUrl.searchParams.get("conversationId")
   if (!conversationId)
@@ -16,14 +19,18 @@ export async function GET(req: NextRequest) {
     })
     return NextResponse.json(messages)
   } catch (err) {
-    console.error("Error al obtener mensajes:", err)
+    console.error("❌ Error al obtener mensajes:", err)
     return NextResponse.json({ error: "Error al obtener mensajes" }, { status: 500 })
   }
 }
 
+/**
+ * 🔹 POST → Crear mensaje (usuario o asistente)
+ * Maneja tanto usuarios autenticados como anónimos.
+ */
 export async function POST(req: NextRequest) {
   try {
-    // Intentar obtener usuario; no aborta si no hay sesión
+    // Intentar obtener usuario autenticado (si existe)
     const user = await verifyAuth(req).catch(() => null)
     const { conversationId, content, role } = await req.json()
 
@@ -32,23 +39,36 @@ export async function POST(req: NextRequest) {
     }
 
     let activeConversationId = conversationId
+    const isAnonymous = !user
 
-    // 🔹 Crear conversación si no existe (persistente solo si hay usuario)
+    /**
+     * 🧩 Crear conversación si no existe
+     * - Si hay usuario → guarda en BD con título dinámico.
+     * - Si no hay usuario → genera UUID temporal.
+     */
     if (!activeConversationId) {
-      if (user) {
+      if (isAnonymous) {
+        activeConversationId = crypto.randomUUID()
+      } else {
+        // Generar título breve basado en el primer mensaje
+        const dynamicTitle =
+          content.length > 40
+            ? content.slice(0, 37).trim() + "..."
+            : content.trim() || "Nueva conversación"
+
         const newConv = await prisma.conversation.create({
           data: {
-            title: "Nueva conversación",
+            title: dynamicTitle,
             userId: user.id,
           },
         })
         activeConversationId = newConv.id
-      } else {
-        activeConversationId = crypto.randomUUID()
       }
     }
 
-    // 🔹 Construir userMsg (persistente solo si user)
+    /**
+     * 💬 Crear mensaje del usuario (solo persistente si autenticado)
+     */
     let userMsg = {
       id: crypto.randomUUID(),
       conversationId: activeConversationId,
@@ -57,28 +77,35 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
     }
 
-    if (user) {
+    if (!isAnonymous) {
       userMsg = await prisma.message.create({
         data: { conversationId: activeConversationId, content, role },
       })
     }
 
-    // 🧩 Recuperar últimos mensajes para contexto (los más recientes)
+    /**
+     * 🧠 Recuperar contexto reciente (solo si autenticado)
+     */
     let recentMessages: { role: string; content: string }[] = []
-    if (user) {
+
+    if (!isAnonymous) {
       const raw = await prisma.message.findMany({
         where: { conversationId: activeConversationId },
         orderBy: { createdAt: "desc" },
         take: 8,
       })
-      // revertimos para mantener orden cronológico ascendente
       recentMessages = raw.reverse().map((m) => ({
         role: m.role,
         content: m.content,
       }))
+    } else {
+      // Si es anónimo, solo el mensaje actual sirve de contexto
+      recentMessages = [{ role: "user", content }]
     }
 
-    // 🔹 Generar respuesta IA con personalidad/contexto
+    /**
+     * 🤖 Generar respuesta de IA
+     */
     let aiText = "Lo siento, el servicio de IA no está disponible por ahora."
     try {
       aiText = await getAIResponse(content, {
@@ -91,7 +118,9 @@ export async function POST(req: NextRequest) {
       console.warn("⚠️ No se pudo generar respuesta de IA:", error)
     }
 
-    // 🔹 Construir aiMsg (persistente solo si user)
+    /**
+     * 💬 Crear mensaje del asistente (solo persistente si autenticado)
+     */
     let aiMsg = {
       id: crypto.randomUUID(),
       conversationId: activeConversationId,
@@ -100,31 +129,27 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
     }
 
-    if (user) {
+    if (!isAnonymous) {
       aiMsg = await prisma.message.create({
-        data: {
-          conversationId: activeConversationId,
-          content: aiText,
-          role: "assistant",
-        },
+        data: { conversationId: activeConversationId, content: aiText, role: "assistant" },
       })
-    }
 
-    // 🔹 Actualizar fecha de conversación (si es persistente)
-    if (user) {
+      // Actualizar timestamp de conversación
       await prisma.conversation.update({
         where: { id: activeConversationId },
         data: { updatedAt: new Date() },
       })
     }
 
-    // IMPORTANTE: devolver objeto con conversationId y mensajes -> frontend lo soporta
+    /**
+     * ✅ Respuesta final al frontend
+     */
     return NextResponse.json({
       conversationId: activeConversationId,
       messages: [userMsg, aiMsg],
     })
   } catch (err) {
-    console.error("Error al crear mensaje:", err)
+    console.error("❌ Error al crear mensaje:", err)
     return NextResponse.json({ error: "Error al crear mensaje" }, { status: 500 })
   }
 }
