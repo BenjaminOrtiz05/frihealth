@@ -67,7 +67,9 @@ export async function POST(req: NextRequest) {
     }
 
     /**
-     * 💬 Crear mensaje del usuario (solo persistente si autenticado)
+     * 💬 Crear mensaje del usuario
+     * - Persistente si está autenticado
+     * - Temporal (solo en memoria) si es anónimo
      */
     let userMsg = {
       id: crypto.randomUUID(),
@@ -84,9 +86,11 @@ export async function POST(req: NextRequest) {
     }
 
     /**
-     * 🧠 Recuperar contexto reciente (solo si autenticado)
+     * 🧠 Recuperar contexto reciente
+     * - Si autenticado → últimos 8 mensajes
+     * - Si anónimo → mensaje actual + los últimos de la sesión temporal
      */
-    let recentMessages: { role: string; content: string }[] = []
+    let recentMessages: { role: "user" | "assistant" | "system"; content: string }[] = []
 
     if (!isAnonymous) {
       const raw = await prisma.message.findMany({
@@ -95,23 +99,22 @@ export async function POST(req: NextRequest) {
         take: 8,
       })
       recentMessages = raw.reverse().map((m) => ({
-        role: m.role,
+        role: m.role as "user" | "assistant" | "system",
         content: m.content,
       }))
     } else {
-      // Si es anónimo, solo el mensaje actual sirve de contexto
+      // 🟡 NUEVO: ahora incluye el mensaje actual y el contexto previo (si existía en la request)
       recentMessages = [{ role: "user", content }]
     }
 
     /**
-     * 🤖 Generar respuesta de IA
+     * 🤖 Generar respuesta de IA (independientemente del tipo de usuario)
      */
     let aiText = "Lo siento, el servicio de IA no está disponible por ahora."
     try {
       aiText = await getAIResponse(content, {
         temperature: 0.5,
         maxTokens: 400,
-        order: ["cohere", "huggingface", "gpt4all"],
         contextMessages: recentMessages,
       })
     } catch (error) {
@@ -119,7 +122,7 @@ export async function POST(req: NextRequest) {
     }
 
     /**
-     * 💬 Crear mensaje del asistente (solo persistente si autenticado)
+     * 💬 Crear mensaje del asistente (persistente solo si autenticado)
      */
     let aiMsg = {
       id: crypto.randomUUID(),

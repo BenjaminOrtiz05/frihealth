@@ -46,23 +46,37 @@ export default function ChatWithIdPage() {
     if (!content.trim()) return
 
     if (user) {
+      // Usuario autenticado
       const msg = await sendMessage(content)
-
       if (msg) {
         setLocalMessages((prev) => [...prev, ...msg])
-        // 🔹 Actualizar preview del sidebar (solo con mensaje del user)
         updateLastMessage(chatId, content)
       }
     } else {
-      const tempMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "user",
-        content,
-        createdAt: new Date(),
+      // Usuario anónimo
+      try {
+        const res = await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: chatId,
+            content,
+            role: "user",
+          }),
+        })
+
+        if (!res.ok) throw new Error("Error al enviar mensaje anónimo")
+
+        const data = await res.json()
+
+        // Añadir los mensajes del usuario y asistente al estado local
+        setLocalMessages((prev) => [...prev, ...data.messages])
+
+        // Guardar en localStorage para persistencia local
+        localStorage.setItem(`anon-messages-${chatId}`, JSON.stringify([...localMessages, ...data.messages]))
+      } catch (error) {
+        console.error("Error al enviar mensaje anónimo:", error)
       }
-      const updated = [...localMessages, tempMsg]
-      setLocalMessages(updated)
-      localStorage.setItem(`anon-messages-${chatId}`, JSON.stringify(updated))
     }
   }
 
